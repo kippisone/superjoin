@@ -1,0 +1,21 @@
+{
+  "name": "superjoin",
+  "version": "0.0.0",
+  "description": "Module builder for the web",
+  "main": "superjoin.js",
+  "dependencies": {
+    "commander": "^2.6.0",
+    "grunt": "^0.4.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "grunt test"
+  },
+  "keywords": [
+    "require",
+    "module",
+    "moduleloader"
+  ],
+  "author": "Andi Heinkelein <andi.oxidant@noname-media.com>",
+  "license": "MIT"
+}

@@ -1,0 +1,6 @@
+{
+    "project": "Supertest",
+    "files": "none",
+    "watch": "*.js",
+    "tests": "tests/*.spec.js"
+}

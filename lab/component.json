@@ -1,0 +1,13 @@
+{
+    "name": "component",
+    "description": "",
+    "version": "0.0.1",
+    "main": "module1.js",
+    "scripts": [
+        "./module1.js",
+        "./module2.js"
+    ],
+    "styles": [
+        
+    ]
+}

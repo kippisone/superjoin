@@ -1,0 +1,19 @@
+#!/usr/bin/env node
+var program = require('commander'),
+    pkg = require('../package.json');
+
+var Superjoin = require('../superjoin');
+
+program.version(pkg.version)
+    .usage('[options] <files ...>')
+    .option('-o, --out <outfile>', 'Write joined file to <outfile>. If this option is not present write to STDOUT')
+    .parse(process.argv);
+
+var superjoin = new Superjoin();
+var out = superjoin.join(program.args);
+if (program.out) {
+    grunt.write.file(program.out);
+}
+else {
+    process.stdout.write(out + '\n');
+}
