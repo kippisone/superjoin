@@ -7,26 +7,46 @@ module.exports = (function() {
     var grunt = require('grunt');
     
     var Superjoin = function() {
-        this.root = __dirname;
+        this.root = process.cwd();
+        this.confFile = path.join(process.cwd(), 'superjoin.json');
+        this.pkgFile = path.join(process.cwd(), 'package.json');
     };
 
-    Superjoin.prototype.join = function(files) {
-        grunt.log.ok('Reading files ...');
-        var out = '';
+    Superjoin.prototype.join = function(files, main) {
+        if (this.verbose) {
+            grunt.log.ok('Reading files ...');
+        }
+        var out = grunt.file.read(path.join(__dirname, './require.js'));
         files.forEach(function(file) {
-            grunt.log.ok(' ... reading', file);
+            if (this.verbose) {
+                grunt.log.ok(' ... reading', file);
+            }
             out += this.addModule(file);
         }, this);
+
+        if (this.autoload) {
+            out += '//Enable autoloading\nwindow.require.autoload = true;\n\n';
+        }
+
+        if (main) {
+            if (this.verbose) {
+                grunt.log.ok(' ... reading main', main);
+            }
+            out += this.addModule(main);
+            out += 'require(\'' + this.resolve(main).name + '\');\n';
+        }
 
         return out;
     };
 
     Superjoin.prototype.addModule = function(file) {
-        var module = 'require.register(\'' + file + '\', function(module, exports) {\n';
+        var module = 'require.register(\'' + file + '\', function(module, exports, require) {\n';
         file = this.resolve(file);
-        grunt.log.ok(file.path);
+        if (this.verbose) {
+            grunt.log.ok(file.path);
+        }
         module += grunt.file.read(file.path);
-        module += '\n};\n';
+        module += '\n});\n';
         return module;
     };
 
@@ -47,10 +67,13 @@ module.exports = (function() {
             filepath = filename;
         }
         else {
-            var nodeModule = path.join(this.root, 'node_modules', file);
+            var nodeModule = path.join(process.cwd(), 'node_modules', file);
             if (grunt.file.exists(nodeModule)) {
                 var pkg = require(path.join(nodeModule, '/package.json'));
-                if (pkg.main) {
+                if (pkg.browser) {
+                    filepath = path.join(nodeModule, pkg.browser);
+                }
+                else if (pkg.main) {
                     filepath = path.join(nodeModule, pkg.main);
                 }
                 else {
@@ -67,6 +90,20 @@ module.exports = (function() {
         };
 
         return resolved;
+    };
+
+    Superjoin.prototype.getConf = function() {
+        if (grunt.file.exists(this.confFile)) {
+            return require(this.confFile);
+        }
+        else if (grunt.file.exists(this.pkgFile)) {
+            var pkg = require(this.pkgFile);
+            if (pkg && pkg.superjoin) {
+                return pkg.superjoin;
+            }
+        }
+
+        return {};
     };
 
     return Superjoin;

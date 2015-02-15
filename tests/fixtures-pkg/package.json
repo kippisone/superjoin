@@ -1,0 +1,7 @@
+{
+    "superjoin": {
+        "name": "superjoin-pkg",
+        "root": "./public/",
+        "files": ["a.js", "b.js"]
+    }
+}

@@ -1,6 +1,9 @@
 describe('Superjoin', function() {
     'use strict';
 
+    var path = require('path'),
+        fs = require('fs');
+
     var Superjoin = require('../superjoin');
     
     describe('resolve', function() {
@@ -64,10 +67,90 @@ describe('Superjoin', function() {
         });
 
         it('Should resolve a module using node_modules dir', function() {
-            expect(superjoin.resolve('module')).to.eql({
-                name: '/srv/supertest/node_modules/module/index.js',
-                path: '/srv/supertest/node_modules/module/index.js'
+            process.chdir(path.join(__dirname, './fixtures/'));
+            superjoin.root = path.join(__dirname, 'fixtures');
+            expect(superjoin.resolve('module1')).to.eql({
+                name: 'module1',
+                path: superjoin.root + '/node_modules/module1/main.js'
             });
+        });
+
+        it('Should resolve a module using node_modules dir, no main property is present', function() {
+            process.chdir(path.join(__dirname, './fixtures/'));
+            superjoin.root = path.join(__dirname, 'fixtures');
+            expect(superjoin.resolve('module2')).to.eql({
+                name: 'module2',
+                path: superjoin.root + '/node_modules/module2/index.js'
+            });
+        });
+
+        it('Should resolve a module using node_modules dir, use browser property as entry point', function() {
+            superjoin.root = path.join(__dirname, 'fixtures');
+            process.chdir(path.join(__dirname, './fixtures/'));
+            expect(superjoin.resolve('module3')).to.eql({
+                name: 'module3',
+                path: superjoin.root + '/node_modules/module3/browser.js'
+            });
+        });
+    });
+
+    describe('getConf', function() {
+        var superjoin;
+
+        it('Should read superjoin conf file', function() {
+            process.chdir(path.join(__dirname, './fixtures/'));
+            superjoin = new Superjoin();
+            superjoin.root = '/srv/supertest';
+
+            expect(superjoin.getConf()).to.be.an('object');
+            expect(superjoin.getConf()).to.eql({
+                name: 'superjoin',
+                root: 'public/',
+                files: ['./modules/module1/index.js', 'module2', 'module3']
+            });
+        });
+
+        it('Should read superjoin conf from package.json', function() {
+            process.chdir(path.join(__dirname, './fixtures-pkg/'));
+            superjoin = new Superjoin();
+            superjoin.root = '/srv/supertest';
+
+            expect(superjoin.getConf()).to.be.an('object');
+            expect(superjoin.getConf()).to.eql({
+                name: 'superjoin-pkg',
+                root: './public/',
+                files: ['a.js','b.js']
+            });
+        });
+
+        it('Should try to read superjoin conf', function() {
+            process.chdir(path.join(__dirname, '..'));
+            superjoin = new Superjoin();
+            superjoin.root = '/srv/supertest';
+
+            expect(superjoin.getConf()).to.be.an('object');
+            expect(superjoin.getConf()).to.eql({
+               
+            });
+        });
+    });
+
+    describe('join', function() {
+        var superjoin;
+
+        beforeEach(function() {
+            process.chdir(path.join(__dirname, './fixtures/'));
+            superjoin = new Superjoin();
+        });
+
+        it('Should build a superjoin bundle', function() {
+            var expected = fs.readFileSync('../fixtures-build/build.js', { encoding: 'utf8' });
+            superjoin.root = 'public';
+            expect(superjoin.join([
+                "./modules/module1/index.js",
+                "module2",
+                "module3"
+            ])).to.eql(expected);
         });
     });
 });

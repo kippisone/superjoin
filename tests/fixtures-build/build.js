@@ -5,27 +5,25 @@
 (function(window) {
     var require = function(file) {
         'use strict';
-
-        console.log('Req', this, file);
-
+        
         var module = {
-            exports: {},
-            file: file
+            exports: {}
         };
 
-        file = require.resolve(file, this ? this.file : null);
+        file = resolve(file);
 
         if (window.require.cache[file]) {
             
-            return window.require.cache[file];
+            window.require.cache[file](module, module.exports);
+            return module.exports;
         }
 
-        if (!window.require.autoload || file.charAt(0) !== '/') {
+        if (!window.require.autoload) {
             throw new Error('Module ' + file + ' not found!');
         }
 
         var remoteFile = location.protocol
-            .concat('//', location.host)
+            .concat('//', location.host, '/')
             .concat(file);
         
         var xhr = new XMLHttpRequest();
@@ -36,21 +34,18 @@
         var fn;
         try {
             //jshint evil:true
-            fn = eval('(function(module, exports, require) {\n' + source + '\n})\n\n//# sourceURL=' + file);
+            fn = eval('function(module, exports) {\n' + source + '\n}\n\n//# sourceURL=' + file);
         }
         catch (err) {
-            throw new Error(err + ' in ' + file);
+            console.error(err + ' in ' + file);
         }
 
-        fn(module, module.exports, require.bind(module));
-        window.require.cache[file] = module.exports;
-        return module.exports;
+        window.require.cache[file] = fn;
+        return window.require.cache[file];
     };
 
-    require.resolve = function(path, parent) {
+    require.resolve = function(path) {
         'use strict';
-
-        console.log('Resolve', path, parent);
 
         // if (window.require.alias[path]) {
         //     return window.require.alias[path];
@@ -58,12 +53,8 @@
 
         var resolved = [];
         if (path.charAt(0) === '.') {
-            var newPath = parent || location.pathname;
-            newPath = newPath.split('/');
-            newPath.pop();
-            newPath = newPath.concat(path.split('/'));
-
-            newPath.forEach(function(p) {
+            path = location.pathname.split('/').concat(path.split('/'));
+            path.forEach(function(p) {
                 if (p === '..') {
                     resolved.pop();
                     return;
@@ -75,6 +66,8 @@
                 resolved.push(p);
             });
         }
+        else if(path.charAt(0) === '/') {
+        }
         else {
             return path;
         }
@@ -84,18 +77,11 @@
             resolved += '.js';
         }
 
-        console.log(' to', resolved);
         return resolved;
     };
 
     require.register = function(path, fn) {
-        var module = {
-            exports: {},
-            file: path
-        };
-
-        fn(module, module.exports, require.bind(module));
-        require.cache[path] = module.exports;
+        this.require.cache[path] = fn;
     };
 
     require.cache = {};
@@ -104,3 +90,21 @@
     window.require = require;
 })(window);
 
+require.register('./modules/module1/index.js', function(module, exports) {
+module.exports = function() {
+    'use strict';
+    
+};
+};
+require.register('module2', function(module, exports) {
+module.exports = function() {
+    'use strict';
+    return 'Module 2';  
+};
+};
+require.register('module3', function(module, exports) {
+module.exports = function() {
+    'use strict';
+    return 'Module 3 browser';  
+};
+};

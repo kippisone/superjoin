@@ -1,18 +1,43 @@
 #!/usr/bin/env node
 var program = require('commander'),
-    pkg = require('../package.json');
+    pkg = require('../package.json'),
+    path = require('path');
+
+var grunt = require('grunt');
 
 var Superjoin = require('../superjoin');
 
 program.version(pkg.version)
     .usage('[options] <files ...>')
     .option('-o, --out <outfile>', 'Write joined file to <outfile>. If this option is not present write to STDOUT')
+    .option('-a, --autoload', 'Enable autoloading of scripts that hadn\'t been added to the bundle file')
+    .option('-v, --verbose', 'Enable console logging')
     .parse(process.argv);
 
-var superjoin = new Superjoin();
-var out = superjoin.join(program.args);
+var superjoin = new Superjoin(),
+    conf = superjoin.getConf();
+
+superjoin.autoload = program.autoload;
+
+if (program.args.length) {
+    files = program.args;
+}
+else {
+    files = conf.files || [];
+    if (conf.root) {
+        superjoin.root = path.resolve(process.cwd(), conf.root);
+    }
+}
+
+if (program.root) {
+    superjoin.root = path.resolve(process.cwd(), program.root);
+}
+
+superjoin.verbose = program.verbose;
+
+var out = superjoin.join(files, conf.main);
 if (program.out) {
-    grunt.write.file(program.out);
+    grunt.file.write(program.out, out);
 }
 else {
     process.stdout.write(out + '\n');

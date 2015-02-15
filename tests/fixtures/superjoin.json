@@ -1,0 +1,9 @@
+{
+    "name": "superjoin",
+    "root": "public/",
+    "files": [
+        "./modules/module1/index.js",
+        "module2",
+        "module3"
+    ]
+}
