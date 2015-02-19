@@ -8,8 +8,8 @@ module.exports = (function() {
     
     var Superjoin = function() {
         this.root = process.cwd();
-        this.confFile = path.join(process.cwd(), 'superjoin.json');
-        this.pkgFile = path.join(process.cwd(), 'package.json');
+        this.modules = [];
+        this.confFiles = [];
     };
 
     Superjoin.prototype.join = function(files, main) {
@@ -17,6 +17,10 @@ module.exports = (function() {
             grunt.log.ok('Reading files ...');
         }
         var out = grunt.file.read(path.join(__dirname, './require.js'));
+        if (this.banner) {
+            out = this.banner.trim() + '\n\n' + out;
+        }
+
         files.forEach(function(file) {
             if (this.verbose) {
                 grunt.log.ok(' ... reading', file);
@@ -42,11 +46,19 @@ module.exports = (function() {
     Superjoin.prototype.addModule = function(file) {
         var module = 'require.register(\'' + file + '\', function(module, exports, require) {\n';
         file = this.resolve(file);
+        if (this.modules.indexOf(file.path) !== -1) {
+            if (this.verbose) {
+                grunt.log.ok('Module "%s" already added!', file.name);
+                return '';
+            }            
+        }
+
         if (this.verbose) {
             grunt.log.ok(file.path);
         }
         module += grunt.file.read(file.path);
         module += '\n});\n';
+        this.modules.push(file.path);
         return module;
     };
 
@@ -93,13 +105,25 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.getConf = function() {
-        if (grunt.file.exists(this.confFile)) {
-            return require(this.confFile);
-        }
-        else if (grunt.file.exists(this.pkgFile)) {
-            var pkg = require(this.pkgFile);
-            if (pkg && pkg.superjoin) {
-                return pkg.superjoin;
+        var confFiles = this.confFiles.length === 0 ? [
+                path.join(this.root, 'superjoin.json'),
+                path.join(process.cwd(), 'superjoin.json'),
+                path.join(process.cwd(), 'package.json')
+            ] : this.confFiles;
+
+        for (var i = 0, len = confFiles.length; i < len; i++) {
+            var file = confFiles[i];
+            console.log('Check file', file);
+
+            if (grunt.file.exists(file)) {
+                if (/\/package.json$/.test(file)) {
+                    var pkg = require(this.pkgFile);
+                    if (pkg && pkg.superjoin) {
+                        return pkg.superjoin;
+                    }
+                }
+
+                return require(file);
             }
         }
 

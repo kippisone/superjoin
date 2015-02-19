@@ -74,12 +74,14 @@
 
                 resolved.push(p);
             });
+
+            resolved.unshift('.');
         }
         else {
             return path;
         }
 
-        resolved = '/' + resolved.join('/');
+        resolved = resolved.join('/');
         if (!/\.js(on)?$/.test(resolved)) {
             resolved += '.js';
         }
