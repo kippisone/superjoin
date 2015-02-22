@@ -7,6 +7,9 @@
         'use strict';
 
         console.log('Req', this, file);
+        if (require.alias && require.alias[file]) {
+            file = require.alias[file];
+        }
 
         var module = {
             exports: {},
@@ -17,7 +20,13 @@
 
         if (window.require.cache[file]) {
             
-            return window.require.cache[file];
+            if (window.require.cache[file].obj) {
+                return window.require.cache[file].obj;
+            }
+
+            window.require.cache[file].fn(module, module.exports, require.bind(module));
+            window.require.cache[file].obj = module.exports;
+            return window.require.cache[file].obj;
         }
 
         if (!window.require.autoload || file.charAt(0) !== '/') {
@@ -43,8 +52,14 @@
         }
 
         fn(module, module.exports, require.bind(module));
-        window.require.cache[file] = module.exports;
-        return module.exports;
+        window.require.cache[file] = {
+            fn: fn,
+            calls: 1,
+            obj: module.exports,
+            loaded: true
+        };
+
+        return window.require.cache[file].obj;
     };
 
     require.resolve = function(path, parent) {
@@ -75,7 +90,9 @@
                 resolved.push(p);
             });
 
-            resolved.unshift('.');
+            if (!parent ||parent.charAt(0) === '.') {
+                resolved.unshift('.');
+            }
         }
         else {
             return path;
@@ -90,18 +107,26 @@
         return resolved;
     };
 
-    require.register = function(path, fn) {
+    require.register = function(alias, path, fn) {
+        if (arguments.length === 2) {
+            fn = path;
+            path = alias;
+            alias= null;
+        }
+
         var module = {
             exports: {},
             file: path
         };
 
-        fn(module, module.exports, require.bind(module));
-        require.cache[path] = module.exports;
+        require.cache[path] = {fn: fn, calls: 0};
+        if (alias) {
+            require.alias[alias] = path;
+        }
     };
 
     require.cache = {};
-    // require.alias = {};
+    require.alias = {};
 
     window.require = require;
 })(window);

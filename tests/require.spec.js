@@ -27,15 +27,15 @@ describe('Require', function() {
         });
 
         it('Should resolve a module name', function() {
-            expect(window.require.resolve('./module1.js')).to.be('/web_modules/module1.js');
+            expect(window.require.resolve('./module1.js')).to.be('./web_modules/module1.js');
         });
 
         it('Should resolve a module name, without ext', function() {
-            expect(window.require.resolve('./module1')).to.be('/web_modules/module1.js');
+            expect(window.require.resolve('./module1')).to.be('./web_modules/module1.js');
         });
 
         it('Should resolve a module name, using a json file', function() {
-            expect(window.require.resolve('./module1.json')).to.be('/web_modules/module1.json');
+            expect(window.require.resolve('./module1.json')).to.be('./web_modules/module1.json');
         });
 
         it('Should resolve a module name, using a node_module', function() {

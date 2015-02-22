@@ -16,7 +16,7 @@ module.exports = (function() {
         if (this.verbose) {
             grunt.log.ok('Reading files ...');
         }
-        var out = grunt.file.read(path.join(__dirname, './require.js'));
+        var out = this.readFile(path.join(__dirname, './require.js'));
         if (this.banner) {
             out = this.banner.trim() + '\n\n' + out;
         }
@@ -44,8 +44,9 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.addModule = function(file) {
-        var module = 'require.register(\'' + file + '\', function(module, exports, require) {\n';
         file = this.resolve(file);
+        console.log('FILE', file);
+        var module = 'require.register(\'' + (file.filename ? file.name + '\',\'' + file.filename : file.name) + '\', function(module, exports, require) {\n';
         if (this.modules.indexOf(file.path) !== -1) {
             if (this.verbose) {
                 grunt.log.ok('Module "%s" already added!', file.name);
@@ -56,40 +57,111 @@ module.exports = (function() {
         if (this.verbose) {
             grunt.log.ok(file.path);
         }
-        module += grunt.file.read(file.path);
+
+        var source = this.readFile(file.path);
+        module += source;
         module += '\n});\n';
         this.modules.push(file.path);
+
+        if (file.isNodeModule) {
+            module += this.grepSubmodules(file, source);
+        }
+
         return module;
+    };
+
+    Superjoin.prototype.grepSubmodules = function(module, source) {
+        var pattern = /require\((.+?)\)/g,
+            out = '';
+        while(true) {
+            var match = pattern.exec(source);
+            if (!match) {
+                break;
+            }
+
+            var subModule = match[1].trim();
+            if (subModule.charAt(0) !== '"' && subModule.charAt(0) !== '\'') {
+                console.warn('Can not resolve module name!', match[0]);
+                continue;
+            }
+
+            subModule = subModule.slice(1, -1);
+            var name = path.relative(path.join(module.dir, '..'), module.path);
+            var split = name.split('/');
+            split.pop();
+            split = split.concat(subModule.split('/'));
+            var newPath = [];
+            for (var i = 0, len = split.length; i < len; i++) {
+                if (split[i] === '..') {
+                    newPath.pop();
+                    continue;
+                }
+
+                if (split[i] === '.') {
+                    continue;
+                }
+
+                newPath.push(split[i]);
+            }
+
+            subModule = newPath.join('/');
+            out += this.addModule(subModule);
+        }
+
+        return out;
+    };
+
+    Superjoin.prototype.readFile = function(file) {
+        return grunt.file.read(file);
     };
 
     Superjoin.prototype.resolve = function(file) {
         var filepath,
-            filename = file;
+            name = file,
+            filename,
+            isNodeModule = false,
+            dir;
 
         if (file.charAt(0) === '.') {
             if (!/\.js(on)?$/.test(file)) {
-                filename += '.js';
+                name += '.js';
             }
-            filepath = path.join(this.root, filename);
+            filepath = path.join(this.root, name);
         }
         else if(file.charAt(0) === '/') {
             if (!/\.js(on)?$/.test(file)) {
-                filename += '.js';
+                name += '.js';
             }
-            filepath = filename;
+            filepath = name;
         }
         else {
             var nodeModule = path.join(process.cwd(), 'node_modules', file);
-            if (grunt.file.exists(nodeModule)) {
+            dir = nodeModule;
+            isNodeModule = true;
+            
+            if (name.indexOf('/') !== -1) {
+                filepath = nodeModule;
+                if (!/\.js(on)?$/.test(name)) {
+                    name += '.js';
+                    filepath += '.js';
+                }
+            }
+            else if (grunt.file.exists(nodeModule)) {
                 var pkg = require(path.join(nodeModule, '/package.json'));
                 if (pkg.browser) {
-                    filepath = path.join(nodeModule, pkg.browser);
+                    filename = pkg.browser;
+                    filepath = path.join(nodeModule, filename);
+                    filename = name + filepath.replace(dir, '');
                 }
                 else if (pkg.main) {
-                    filepath = path.join(nodeModule, pkg.main);
+                    filename = pkg.main;
+                    filepath = path.join(nodeModule, filename);
+                    filename = name + filepath.replace(dir, '');
                 }
                 else {
-                    filepath = path.join(nodeModule, 'index.js');
+                    filename = 'index.js';
+                    filepath = path.join(nodeModule, filename);
+                    filename = name + filepath.replace(dir, '');
                 }
             } else {
                 throw new Error('Module ' + file + ' not fount! Use npm install ' + file + ' --save to install it.');
@@ -97,9 +169,18 @@ module.exports = (function() {
         }
 
         var resolved = {
-            name: filename,
-            path: filepath
+            name: name,
+            path: filepath,
+            isNodeModule: isNodeModule
         };
+
+        if (dir) {
+            resolved.dir = dir;
+        }
+
+        if (filename) {
+            resolved.filename = filename;
+        }
 
         return resolved;
     };
@@ -113,11 +194,10 @@ module.exports = (function() {
 
         for (var i = 0, len = confFiles.length; i < len; i++) {
             var file = confFiles[i];
-            console.log('Check file', file);
 
             if (grunt.file.exists(file)) {
                 if (/\/package.json$/.test(file)) {
-                    var pkg = require(this.pkgFile);
+                    var pkg = require(file);
                     if (pkg && pkg.superjoin) {
                         return pkg.superjoin;
                     }
