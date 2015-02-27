@@ -15,8 +15,10 @@ program.version(pkg.version)
     .option('-v, --verbose', 'Enable console logging')
     .parse(process.argv);
 
-var superjoin = new Superjoin(),
-    conf = superjoin.getConf();
+var superjoin = new Superjoin();
+
+superjoin.verbose = program.verbose;
+conf = superjoin.getConf();
 
 superjoin.autoload = program.autoload;
 
@@ -34,7 +36,6 @@ if (program.root) {
     superjoin.root = path.resolve(process.cwd(), program.root);
 }
 
-superjoin.verbose = program.verbose;
 
 var out = superjoin.join(files, conf.main);
 if (program.out) {

@@ -188,14 +188,18 @@ module.exports = (function() {
     Superjoin.prototype.getConf = function() {
         var confFiles = this.confFiles.length === 0 ? [
                 path.join(this.root, 'superjoin.json'),
-                path.join(process.cwd(), 'superjoin.json'),
-                path.join(process.cwd(), 'package.json')
+                path.join(this.root, 'package.json')
             ] : this.confFiles;
 
         for (var i = 0, len = confFiles.length; i < len; i++) {
             var file = confFiles[i];
 
+
             if (grunt.file.exists(file)) {
+                if (this.verbose) {
+                    grunt.log.ok('Using config file:', file);
+                }
+                
                 if (/\/package.json$/.test(file)) {
                     var pkg = require(file);
                     if (pkg && pkg.superjoin) {
