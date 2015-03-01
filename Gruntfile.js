@@ -15,6 +15,16 @@ module.exports = function(grunt) {
                 'modules/*.js',
                 'superjoin.js'
             ],
+            requirejs: {
+                options: {
+                    strict: false
+                },
+                files: {
+                    src: [
+                        'require.js'
+                    ]
+                }
+            },
             options: {
                 jshintrc: '.jshintrc'
             }

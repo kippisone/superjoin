@@ -1,8 +1,7 @@
 module.exports = (function() {
     'use strict';
 
-    var path = require('path'),
-        fs = require('fs');
+    var path = require('path');
     
     var grunt = require('grunt');
     
@@ -45,7 +44,10 @@ module.exports = (function() {
 
     Superjoin.prototype.addModule = function(file) {
         file = this.resolve(file);
-        var module = 'require.register(\'' + (file.filename ? file.name + '\', \'' + file.filename : file.name) + '\', function(module, exports, require) {\n';
+        var module = 'require.register(\'' + (
+            file.filename ? file.name + '\', \'' + file.filename : file.name
+        ) + '\', function(module, exports, require) {\n';
+
         if (this.modules.indexOf(file.path) !== -1) {
             if (this.verbose) {
                 grunt.log.ok('Module "%s" already added!', file.name);

@@ -3,8 +3,9 @@
  * Copyright by Andi Heinkelein <andi.oxidant@noname-media.com>
  */
 (function(window) {
+    'use strict';
+    
     var require = function(file) {
-        'use strict';
 
         if (require.alias && require.alias[file]) {
             file = require.alias[file];
@@ -62,8 +63,6 @@
     };
 
     require.resolve = function(path, parent) {
-        'use strict';
-
         var resolved = [];
         if (path.charAt(0) === '.') {
             var newPath = parent || location.pathname;
@@ -105,11 +104,6 @@
             path = alias;
             alias= null;
         }
-
-        var module = {
-            exports: {},
-            file: path
-        };
 
         require.cache[path] = {fn: fn, calls: 0};
         if (alias) {
