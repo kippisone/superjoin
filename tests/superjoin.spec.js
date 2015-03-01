@@ -78,6 +78,7 @@ describe('Superjoin', function() {
             superjoin.root = path.join(__dirname, 'fixtures');
             expect(superjoin.resolve('module1')).to.eql({
                 name: 'module1',
+                filename: 'module1/main.js',
                 path: superjoin.root + '/node_modules/module1/main.js',
                 dir: superjoin.root + '/node_modules/module1',
                 isNodeModule: true
@@ -89,6 +90,7 @@ describe('Superjoin', function() {
             superjoin.root = path.join(__dirname, 'fixtures');
             expect(superjoin.resolve('module2')).to.eql({
                 name: 'module2',
+                filename: 'module2/index.js',
                 path: superjoin.root + '/node_modules/module2/index.js',
                 dir: superjoin.root + '/node_modules/module2',
                 isNodeModule: true
@@ -100,6 +102,7 @@ describe('Superjoin', function() {
             process.chdir(path.join(__dirname, './fixtures/'));
             expect(superjoin.resolve('module3')).to.eql({
                 name: 'module3',
+                filename: 'module3/browser.js',
                 path: superjoin.root + '/node_modules/module3/browser.js',
                 dir: superjoin.root + '/node_modules/module3',
                 isNodeModule: true
@@ -113,7 +116,6 @@ describe('Superjoin', function() {
         it('Should read superjoin conf file', function() {
             process.chdir(path.join(__dirname, './fixtures/'));
             superjoin = new Superjoin();
-            superjoin.root = '/srv/supertest';
 
             expect(superjoin.getConf()).to.be.an('object');
             expect(superjoin.getConf()).to.eql({
@@ -126,7 +128,6 @@ describe('Superjoin', function() {
         it('Should read superjoin conf from package.json', function() {
             process.chdir(path.join(__dirname, './fixtures-pkg/'));
             superjoin = new Superjoin();
-            superjoin.root = '/srv/supertest';
 
             expect(superjoin.getConf()).to.be.an('object');
             expect(superjoin.getConf()).to.eql({
@@ -139,7 +140,6 @@ describe('Superjoin', function() {
         it('Should try to read superjoin conf', function() {
             process.chdir(path.join(__dirname, '.'));
             superjoin = new Superjoin();
-            superjoin.root = '/srv/supertest';
 
             expect(superjoin.getConf()).to.be.an('object');
             expect(superjoin.getConf()).to.eql({
@@ -251,7 +251,7 @@ describe('Superjoin', function() {
         });
     });
 
-    describe.skip('join', function() {
+    describe('join', function() {
         var superjoin;
 
         beforeEach(function() {

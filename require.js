@@ -6,7 +6,6 @@
     var require = function(file) {
         'use strict';
 
-        console.log('Req', this, file);
         if (require.alias && require.alias[file]) {
             file = require.alias[file];
         }
@@ -65,12 +64,6 @@
     require.resolve = function(path, parent) {
         'use strict';
 
-        console.log('Resolve', path, parent);
-
-        // if (window.require.alias[path]) {
-        //     return window.require.alias[path];
-        // }
-
         var resolved = [];
         if (path.charAt(0) === '.') {
             var newPath = parent || location.pathname;
@@ -103,7 +96,6 @@
             resolved += '.js';
         }
 
-        console.log(' to', resolved);
         return resolved;
     };
 
