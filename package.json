@@ -1,6 +1,6 @@
 {
   "name": "superjoin",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Module builder for the web",
   "main": "superjoin.js",
   "dependencies": {
