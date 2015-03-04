@@ -1,7 +1,8 @@
 module.exports = (function() {
     'use strict';
 
-    var path = require('path');
+    var path = require('path'),
+        fs = require('fs');
     
     var grunt = require('grunt');
     
@@ -136,7 +137,20 @@ module.exports = (function() {
             filepath = name;
         }
         else {
-            var nodeModule = path.join(process.cwd(), 'node_modules', file);
+            var modulesDir = path.join(this.root, 'node_modules');
+            while(true) {
+                if (!fs.existsSync(modulesDir)) {
+                    modulesDir = path.join(modulesDir, '../../node_modules');
+                    if (modulesDir === '/node_modules') {
+                        throw new Error('No node_modules folder found!');
+                    }
+                }
+                else {
+                    break;
+                }
+            }
+
+            var nodeModule = path.join(modulesDir, file);
             dir = nodeModule;
             isNodeModule = true;
             
