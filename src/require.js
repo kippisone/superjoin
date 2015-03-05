@@ -2,7 +2,12 @@
  * Superjoin module loader
  * Copyright by Andi Heinkelein <andi.oxidant@noname-media.com>
  *
+ */
+
+/**
+ * Module loader for the web
  * @module Superjoin
+ *
  */
 (function(window) {
     'use strict';
@@ -72,6 +77,12 @@
         return window.require.cache[file].obj;
     };
 
+    /**
+     * Resolves a module name
+     * @param  {string} path   Modulename
+     * @param  {string} parent Parent module path. Resolves a module name relative to this path. (optional)
+     * @return {string}        Returns a resolved module name
+     */
     require.resolve = function(path, parent) {
         var resolved = [];
         if (path.charAt(0) === '.') {
@@ -108,6 +119,13 @@
         return resolved;
     };
 
+    /**
+     * Register a module in the module cache
+     * @param  {string}   alias Alias name for this module (Optional)
+     * @param  {string}   path  Module name
+     * @param  {Function} fn    Callback function. To be called when module is required
+     * @return {any}         Returns the module
+     */
     require.register = function(alias, path, fn) {
         if (arguments.length === 2) {
             fn = path;
@@ -121,7 +139,18 @@
         }
     };
 
+    /**
+     * Internal module cache
+     * @private
+     * @type {Object}
+     */
     require.cache = {};
+
+    /**
+     * Internal alises storage
+     * @private
+     * @type {Object}
+     */
     require.alias = {};
 
     window.require = require;
