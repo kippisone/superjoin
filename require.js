@@ -6,7 +6,7 @@
  */
 (function(window) {
     'use strict';
-    
+
     /**
      * Load a module
      *
@@ -75,7 +75,7 @@
     require.resolve = function(path, parent) {
         var resolved = [];
         if (path.charAt(0) === '.') {
-            var newPath = parent || location.pathname;
+            var newPath = parent || '.';
             newPath = newPath.split('/');
             newPath.pop();
             newPath = newPath.concat(path.split('/'));
