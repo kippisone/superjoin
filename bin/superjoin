@@ -12,6 +12,7 @@ program.version(pkg.version)
     .option('-o, --out <outfile>', 'Write joined file to <outfile>. If this option is not present write to STDOUT')
     .option('-a, --autoload', 'Enable autoloading of scripts that hadn\'t been added to the bundle file')
     .option('-b, --banner <banner>', 'Adds <banner> at the beginning of the bundle')
+    .option('-r, --root <path>', 'Sets a root path')
     .option('-v, --verbose', 'Enable console logging')
     .parse(process.argv);
 

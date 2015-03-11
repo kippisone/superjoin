@@ -39,13 +39,13 @@
             return window.require.cache[file].obj;
         }
 
-        if (!window.require.autoload || file.charAt(0) !== '/') {
+        if (!window.require.autoload || (window.require.autoload && file.charAt(0) !== '.')) {
             throw new Error('Module ' + file + ' not found!');
         }
 
         var remoteFile = location.protocol
             .concat('//', location.host)
-            .concat(file);
+            .concat(require.resolve(file.substr(1)));
         
         var xhr = new XMLHttpRequest();
         xhr.open('GET', remoteFile, false);
@@ -125,5 +125,6 @@
     require.alias = {};
 
     window.require = require;
+
 })(window);
 

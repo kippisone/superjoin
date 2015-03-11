@@ -83,7 +83,11 @@ module.exports = (function() {
 
             var subModule = match[1].trim();
             if (subModule.charAt(0) !== '"' && subModule.charAt(0) !== '\'') {
-                console.warn('Can not resolve module name!', match[0]);
+                console.warn('Can\'t resolve module name!', match[0]);
+                continue;
+            }
+
+            if (subModule.charAt(0) !== '.') {
                 continue;
             }
 
@@ -179,7 +183,7 @@ module.exports = (function() {
                     filename = name + filepath.replace(dir, '');
                 }
             } else {
-                throw new Error('Module ' + file + ' not fount! Use npm install ' + file + ' --save to install it.');
+                throw new Error('Module ' + file + ' not found! Use npm install ' + file + ' --save to install it.');
             }
         }
 
