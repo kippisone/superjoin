@@ -16,7 +16,7 @@
      * @return {any}      Returns the loaded module.
      */
     var require = function(file) {
-
+        console.log('REQUIRE', file, this);
         if (require.alias && require.alias[file]) {
             file = require.alias[file];
         }
@@ -28,13 +28,18 @@
 
         file = require.resolve(file, this ? this.file : null);
 
+        var requireFunc = require.bind({
+            file: file
+        });
+
         if (window.require.cache[file]) {
+            console.log(' ... get from cache', file);
             
             if (window.require.cache[file].obj) {
                 return window.require.cache[file].obj;
             }
 
-            window.require.cache[file].fn(module, module.exports, require.bind(module));
+            window.require.cache[file].fn(module, module.exports, requireFunc);
             window.require.cache[file].obj = module.exports;
             return window.require.cache[file].obj;
         }
@@ -45,11 +50,16 @@
 
         var remoteFile = location.protocol
             .concat('//', location.host)
-            .concat(require.resolve(file.substr(1)));
+            .concat(file.substr(1));
         
+        console.log(' ... load from remote', remoteFile);
         var xhr = new XMLHttpRequest();
         xhr.open('GET', remoteFile, false);
         xhr.send();
+        if (xhr.status !== 200) {
+            throw new Error('Could not load module "' + file + '"! Response error: ' +
+                xhr.status + ' ' + xhr.statusText);
+        }
         var source = xhr.responseText;
 
         var fn;
@@ -61,7 +71,7 @@
             throw new Error(err + ' in ' + file);
         }
 
-        fn(module, module.exports, require.bind(module));
+        fn(module, module.exports, require.bind(requireFunc));
         window.require.cache[file] = {
             fn: fn,
             calls: 1,
@@ -97,6 +107,7 @@
             }
         }
         else {
+            console.log(' ... resolve path to', path);
             return path;
         }
 
@@ -105,6 +116,8 @@
             resolved += '.js';
         }
 
+
+        console.log(' ... resolve path to', resolved);
         return resolved;
     };
 
