@@ -61,7 +61,7 @@ module.exports = (function() {
         }
 
         var source = this.readFile(file.path);
-        module += source;
+        module += (/\.json$/.test(file) ? 'module.exports = ' : '') + source;
         module += '\n});\n';
         this.modules.push(file.path);
 

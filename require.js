@@ -65,7 +65,9 @@
         var fn;
         try {
             //jshint evil:true
-            fn = eval('(function(module, exports, require) {\n' + source + '\n})\n\n//# sourceURL=' + file);
+            fn = eval('(function(module, exports, require) {\n' +
+                (/\.json$/.test(file) ? 'module.exports = ' : '') +
+                source + '\n})\n\n//# sourceURL=' + file);
         }
         catch (err) {
             throw new Error(err + ' in ' + file);
