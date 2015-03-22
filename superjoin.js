@@ -73,6 +73,9 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.grepSubmodules = function(module, source) {
+        if (this.verbose) {
+            grunt.log.ok(' ... grep supmodules of', module.name);
+        }
         var pattern = /require\((.+?)\)/g,
             out = '';
         while(true) {
@@ -87,11 +90,11 @@ module.exports = (function() {
                 continue;
             }
 
+            subModule = subModule.slice(1, -1);
             if (subModule.charAt(0) !== '.') {
                 continue;
             }
 
-            subModule = subModule.slice(1, -1);
             var name = path.relative(path.join(module.dir, '..'), module.path);
             var split = name.split('/');
             split.pop();
