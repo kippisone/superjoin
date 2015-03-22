@@ -1,27 +1,32 @@
 #!/usr/bin/env node
+'use strict';
+
 var program = require('commander'),
     pkg = require('../package.json'),
     path = require('path');
 
-var grunt = require('grunt');
+var grunt = require('grunt'),
+    watch = require('node-watch');
 
 var Superjoin = require('../superjoin');
 
 program.version(pkg.version)
     .usage('[options] <files ...>')
-    .option('-o, --out <outfile>', 'Write joined file to <outfile>. If this option is not present write to STDOUT')
+    .option('-o, --outfile <outfile>', 'Write joined file to <outfile>. If this option is not present write to STDOUT')
     .option('-a, --autoload', 'Enable autoloading of scripts that hadn\'t been added to the bundle file')
     .option('-b, --banner <banner>', 'Adds <banner> at the beginning of the bundle')
+    .option('-r, --root <path>', 'Sets a root path')
+    .option('-w, --watch', 'Watch .js files for changes and rebuilds the bundle')
     .option('-v, --verbose', 'Enable console logging')
     .parse(process.argv);
 
 var superjoin = new Superjoin();
-
 superjoin.verbose = program.verbose;
-conf = superjoin.getConf();
+var conf = superjoin.getConf(),
+    files;
 
 superjoin.autoload = program.autoload;
-
+    
 if (program.args.length) {
     files = program.args;
 }
@@ -36,11 +41,38 @@ if (program.root) {
     superjoin.root = path.resolve(process.cwd(), program.root);
 }
 
-
+var outFile = program.outfile || conf.outfile;
 var out = superjoin.join(files, conf.main);
-if (program.out) {
-    grunt.file.write(program.out, out);
-}
-else {
-    process.stdout.write(out + '\n');
+
+var run = function() {
+    
+    if (outFile) {
+        grunt.file.write(outFile, out);
+    }
+    else {
+        process.stdout.write(out + '\n');
+    }
+};
+
+run();
+
+if (program.watch) {
+    if (program.watch === true) {
+        program.watch = '**/*.js';
+    }
+
+    var watchOpts = {
+        recusive: true,
+        followSymlinks: true
+    };
+
+    var ignore = new RegExp(outFile + '$');
+    watch(superjoin.root, watchOpts, function(file) {
+        if (ignore.test(file)) {
+            return;
+        }
+
+        console.log('File changed:', outFile, file);
+        run();
+    });
 }

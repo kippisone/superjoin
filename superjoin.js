@@ -57,11 +57,11 @@ module.exports = (function() {
         }
 
         if (this.verbose) {
-            grunt.log.ok(file.path);
+            grunt.log.ok(' ... add module', file.path);
         }
 
         var source = this.readFile(file.path);
-        module += source;
+        module += (/\.json$/.test(file) ? 'module.exports = ' : '') + source;
         module += '\n});\n';
         this.modules.push(file.path);
 
@@ -83,11 +83,15 @@ module.exports = (function() {
 
             var subModule = match[1].trim();
             if (subModule.charAt(0) !== '"' && subModule.charAt(0) !== '\'') {
-                console.warn('Can not resolve module name!', match[0]);
+                console.warn('Could\'t resolve module name!', match[0]);
                 continue;
             }
 
             subModule = subModule.slice(1, -1);
+            if (subModule.charAt(0) !== '.') {
+                continue;
+            }
+
             var name = path.relative(path.join(module.dir, '..'), module.path);
             var split = name.split('/');
             split.pop();
@@ -179,7 +183,7 @@ module.exports = (function() {
                     filename = name + filepath.replace(dir, '');
                 }
             } else {
-                throw new Error('Module ' + file + ' not fount! Use npm install ' + file + ' --save to install it.');
+                throw new Error('Module ' + file + ' not found! Use npm install ' + file + ' --save to install it.');
             }
         }
 

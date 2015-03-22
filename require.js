@@ -6,7 +6,7 @@
  */
 (function(window) {
     'use strict';
-    
+
     /**
      * Load a module
      *
@@ -16,7 +16,7 @@
      * @return {any}      Returns the loaded module.
      */
     var require = function(file) {
-
+        console.log('REQUIRE', file, this);
         if (require.alias && require.alias[file]) {
             file = require.alias[file];
         }
@@ -28,40 +28,52 @@
 
         file = require.resolve(file, this ? this.file : null);
 
+        var requireFunc = require.bind({
+            file: file
+        });
+
         if (window.require.cache[file]) {
+            console.log(' ... get from cache', file);
             
             if (window.require.cache[file].obj) {
                 return window.require.cache[file].obj;
             }
 
-            window.require.cache[file].fn(module, module.exports, require.bind(module));
+            window.require.cache[file].fn(module, module.exports, requireFunc);
             window.require.cache[file].obj = module.exports;
             return window.require.cache[file].obj;
         }
 
-        if (!window.require.autoload || file.charAt(0) !== '/') {
+        if (!window.require.autoload || (window.require.autoload && file.charAt(0) !== '.')) {
             throw new Error('Module ' + file + ' not found!');
         }
 
         var remoteFile = location.protocol
             .concat('//', location.host)
-            .concat(file);
+            .concat(file.substr(1));
         
+        console.log(' ... load from remote', remoteFile);
         var xhr = new XMLHttpRequest();
         xhr.open('GET', remoteFile, false);
         xhr.send();
+        if (xhr.status !== 200) {
+            throw new Error('Could not load module "' + file + '"! Response error: ' +
+                xhr.status + ' ' + xhr.statusText);
+        }
         var source = xhr.responseText;
 
         var fn;
         try {
             //jshint evil:true
-            fn = eval('(function(module, exports, require) {\n' + source + '\n})\n\n//# sourceURL=' + file);
+            fn = eval('(function(module, exports, require) {\n' +
+                (/\.json$/.test(file) ? 'module.exports = ' : '') +
+                source + '\n})\n\n//# sourceURL=' + file);
         }
         catch (err) {
             throw new Error(err + ' in ' + file);
         }
 
-        fn(module, module.exports, require.bind(module));
+        fn(module, module.exports, require.bind(requireFunc));
         window.require.cache[file] = {
             fn: fn,
             calls: 1,
@@ -75,7 +87,7 @@
     require.resolve = function(path, parent) {
         var resolved = [];
         if (path.charAt(0) === '.') {
-            var newPath = parent || location.pathname;
+            var newPath = parent || '.';
             newPath = newPath.split('/');
             newPath.pop();
             newPath = newPath.concat(path.split('/'));
@@ -97,6 +109,7 @@
             }
         }
         else {
+            console.log(' ... resolve path to', path);
             return path;
         }
 
@@ -105,6 +118,8 @@
             resolved += '.js';
         }
 
+
+        console.log(' ... resolve path to', resolved);
         return resolved;
     };
 
@@ -125,5 +140,6 @@
     require.alias = {};
 
     window.require = require;
+
 })(window);
 
