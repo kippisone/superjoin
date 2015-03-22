@@ -57,7 +57,7 @@ module.exports = (function() {
         }
 
         if (this.verbose) {
-            grunt.log.ok(file.path);
+            grunt.log.ok(' ... add module', file.path);
         }
 
         var source = this.readFile(file.path);
@@ -73,9 +73,6 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.grepSubmodules = function(module, source) {
-        if (this.verbose) {
-            grunt.log.ok(' ... grep supmodules of', module.name);
-        }
         var pattern = /require\((.+?)\)/g,
             out = '';
         while(true) {
@@ -86,7 +83,7 @@ module.exports = (function() {
 
             var subModule = match[1].trim();
             if (subModule.charAt(0) !== '"' && subModule.charAt(0) !== '\'') {
-                console.warn('Can\'t resolve module name!', match[0]);
+                console.warn('Could\'t resolve module name!', match[0]);
                 continue;
             }
 
