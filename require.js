@@ -16,7 +16,7 @@
      * @return {any}      Returns the loaded module.
      */
     var require = function(file) {
-        console.log('REQUIRE', file, this);
+        // console.log('REQUIRE', file, this);
         if (require.alias && require.alias[file]) {
             file = require.alias[file];
         }
@@ -33,7 +33,7 @@
         });
 
         if (window.require.cache[file]) {
-            console.log(' ... get from cache', file);
+            // console.log(' ... get from cache', file);
             
             if (window.require.cache[file].obj) {
                 return window.require.cache[file].obj;
@@ -52,7 +52,7 @@
             .concat('//', location.host)
             .concat(file.substr(1));
         
-        console.log(' ... load from remote', remoteFile);
+        // console.log(' ... load from remote', remoteFile);
         var xhr = new XMLHttpRequest();
         xhr.open('GET', remoteFile, false);
         xhr.send();
@@ -109,7 +109,7 @@
             }
         }
         else {
-            console.log(' ... resolve path to', path);
+            // console.log(' ... resolve path to', path);
             return path;
         }
 
@@ -119,7 +119,7 @@
         }
 
 
-        console.log(' ... resolve path to', resolved);
+        // console.log(' ... resolve path to', resolved);
         return resolved;
     };
 
