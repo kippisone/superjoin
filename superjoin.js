@@ -12,6 +12,7 @@ module.exports = (function() {
         var dir;
 
         this.root = conf.root || process.cwd();
+        this.workingDir = conf.workingDir || process.cwd();
         this.modules = [];
         this.confFiles = [];
 
@@ -20,7 +21,7 @@ module.exports = (function() {
         this.npmDir = conf.npmDir || null;
 
         if (!this.bwrDir) {
-            dir = path.join(process.cwd(), 'bower_components');
+            dir = path.join(this.workingDir, 'bower_components');
             while (true) {
                 if (grunt.file.exists(dir)) {
                     this.bwrDir = dir;
@@ -28,14 +29,14 @@ module.exports = (function() {
                 }
 
                 dir = path.join(dir, '../../bower_components');
-                if (dir === '/') {
+                if (dir === '/bower_components') {
                     break;
                 }
             }
         }
 
         if (!this.npmDir) {
-            dir = path.join(process.cwd(), 'node_modules');
+            dir = path.join(this.workingDir, 'node_modules');
             while (true) {
                 if (grunt.file.exists(dir)) {
                     this.npmDir = dir;
@@ -43,7 +44,7 @@ module.exports = (function() {
                 }
 
                 dir = path.join(dir, '../../node_modules');
-                if (dir === '/') {
+                if (dir === '/node_modules') {
                     break;
                 }
             }
@@ -82,7 +83,7 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.addModule = function(file) {
-        console.log('ADD', file);
+        // console.log('ADD', file);
         file = this.resolve(file);
         var module = 'require.register(\'' + (
             file.filename ? file.name + '\', \'' + file.filename : file.name
@@ -112,7 +113,7 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.grepSubmodules = function(module, source) {
-        console.log('GREP', module);
+        // console.log('GREP', module);
         var pattern = /require\((.+?)\)/g,
             out = '';
         while(true) {
@@ -186,7 +187,7 @@ module.exports = (function() {
                 throw new Error('Unknowd module type ' + moduleType + '!');
         }
 
-        console.log('PATH', moduleDir, file);
+        // console.log('PATH', moduleType, moduleDir, file);
         var nodeModule = path.join(moduleDir, file),
             name = file,
             filepath,
@@ -254,7 +255,7 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.resolve = function(file) {
-        console.log('Files', file);
+        // console.log('Files', file);
 
         var filepath,
             name = file,
@@ -264,16 +265,16 @@ module.exports = (function() {
             resolved;
 
         if (/^\.?[a-zA-Z0-9_-]+$/.test(file)) {
-            console.log('Load from <modules>');
+            // console.log('Load from <modules>');
             if (this.libDir) {
                 resolved = this.loadModule('lib', file);
             }
 
-            if (!resolved) {
+            if (!resolved && this.bwrDir) {
                 resolved = this.loadModule('bower', file);
             }
             
-            if (!resolved) {
+            if (!resolved && this.npmDir) {
                 resolved = this.loadModule('npm', file);
             }
 
@@ -289,7 +290,7 @@ module.exports = (function() {
             var type = file.slice(1, pos);
             file = file.substr(pos + 1);
 
-            console.log('TYPE', type, file);
+            // console.log('TYPE', type, file);
             resolved = this.loadModule(type, file);
 
         }
@@ -306,7 +307,7 @@ module.exports = (function() {
             filepath = name;
         }
         else {
-            console.log('OTHER', file);
+            // console.log('OTHER', file);
             var modulesDir = path.join(this.root, this.libDir);
             while(true) {
                 if (!fs.existsSync(modulesDir)) {
@@ -386,15 +387,15 @@ module.exports = (function() {
             resolved.filename = filename;
         }
 
-        console.log('Resolved:', resolved);
+        // console.log('Resolved:', resolved);
 
         return resolved;
     };
 
     Superjoin.prototype.getConf = function() {
         var confFiles = this.confFiles.length === 0 ? [
-                path.join(process.cwd(), 'superjoin.json'),
-                path.join(process.cwd(), 'package.json')
+                path.join(this.workingDir, 'superjoin.json'),
+                path.join(this.workingDir, 'package.json')
             ] : this.confFiles;
 
         var cnf;
