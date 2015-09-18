@@ -1,5 +1,17 @@
-describe('Require', function() {
+describe('Browser require module', function() {
     'use strict';
+
+    var testPaths = [
+        { from: './index.js', to: './foo.js', res: './foo.js'},
+        { from: './index.js', to: 'foo.js', res: './foo.js'},
+        { from: './bar/index.js', to: '../foo.js', res: './foo.js'},
+        { from: './foo/bar/bla/blubb.js', to: '../../../index.js', res: './index.js'},
+        { from: './index.js', to: 'mymodule', res: 'mymodule'},
+        { from: './index.js', to: 'mymodule.js', res: 'mymodule.js', noFile: true},
+        { from: 'mymodule', to: './lib/bla', res: 'mymodule/lib/bla.js'},
+        { from: 'mymodule', to: 'othermodule', res: 'othermodule'},
+        { from: 'mymodule', to: 'othermodule/bla.js', res: 'othermodule/bla.js'},
+    ];
     
     global.window = {};
     global.location = {
@@ -7,7 +19,7 @@ describe('Require', function() {
     };
 
     before(function() {
-        require('../require.js');
+        require('../public/require.js');
     });
 
     after(function() {
@@ -22,24 +34,13 @@ describe('Require', function() {
     });
 
     describe('resolve', function() {
-        it('Should be a function', function() {
-            expect(window.require.resolve).to.be.a('function');
-        });
-
-        it('Should resolve a module name', function() {
-            expect(window.require.resolve('./module1.js')).to.be('./web_modules/module1.js');
-        });
-
-        it('Should resolve a module name, without ext', function() {
-            expect(window.require.resolve('./module1')).to.be('./web_modules/module1.js');
-        });
-
-        it('Should resolve a module name, using a json file', function() {
-            expect(window.require.resolve('./module1.json')).to.be('./web_modules/module1.json');
-        });
-
-        it('Should resolve a module name, using a node_module', function() {
-            expect(window.require.resolve('module1')).to.be('module1');
+        testPaths.forEach(function(p) {
+            it('Should resolve a path from ' + p.to + ' to ' + p.res, function() {
+                var moduleExistsStub = sinon.stub(window.require, 'moduleExists');
+                moduleExistsStub.returns(!p.noFile);
+                expect(window.require.resolve(p.from, p.to)).to.eql(p.res);
+                moduleExistsStub.restore();
+            });
         });
     });
 });

@@ -143,3 +143,21 @@
 
 })(window);
 
+require.register('./modules/module1/index.js', 'public/modules/module1/index.js', function(module, exports, require) {
+module.exports = function() {
+    'use strict';
+    
+};
+});
+require.register('module2', '/home/andi/Webprojects/superjoin/tests/fixtures/node_modules/module2/index.js', function(module, exports, require) {
+module.exports = function() {
+    'use strict';
+    return 'Module 2';  
+};
+});
+require.register('module3', '/home/andi/Webprojects/superjoin/tests/fixtures/node_modules/module3/browser.js', function(module, exports, require) {
+module.exports = function() {
+    'use strict';
+    return 'Module 3 browser';  
+};
+});

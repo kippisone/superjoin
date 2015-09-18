@@ -1,6 +1,9 @@
 {
-    "project": "Supertest",
-    "files": "none",
-    "watch": "*.js",
+    "project": "superjoin",
+    "files": [
+        "modules/*.js",
+        "public/*.js",
+        "superjoin.js"
+    ],
     "tests": "tests/*.spec.js"
 }

@@ -55,7 +55,7 @@ module.exports = (function() {
         if (this.verbose) {
             grunt.log.ok('Reading files ...');
         }
-        var out = this.readFile(path.join(__dirname, './require.js'));
+        var out = this.readFile(path.join(__dirname, 'public/require.js'));
         if (this.banner) {
             out = this.banner.trim() + '\n\n' + out;
         }
@@ -76,17 +76,16 @@ module.exports = (function() {
                 grunt.log.ok(' ... reading main', main);
             }
             out += this.addModule(main);
-            out += 'require(\'' + this.resolve(main).name + '\');\n';
+            out += 'require(\'' + this.resolve(this.root, main).name + '\');\n';
         }
 
         return out;
     };
 
     Superjoin.prototype.addModule = function(file) {
-        // console.log('ADD', file);
-        file = this.resolve(file);
+        file = this.resolve(this.root, file);
         var module = 'require.register(\'' + (
-            file.filename ? file.name + '\', \'' + file.filename : file.name
+            file.path ? file.name + '\', \'' + file.path : file.name
         ) + '\', function(module, exports, require) {\n';
 
         if (this.modules.indexOf(file.path) !== -1) {
@@ -187,7 +186,6 @@ module.exports = (function() {
                 throw new Error('Unknowd module type ' + moduleType + '!');
         }
 
-        // console.log('PATH', moduleType, moduleDir, file);
         var nodeModule = path.join(moduleDir, file),
             name = file,
             filepath,
@@ -254,142 +252,92 @@ module.exports = (function() {
         };
     };
 
-    Superjoin.prototype.resolve = function(file) {
-        // console.log('Files', file);
+    Superjoin.prototype.resolve = function(from, to) {
+        console.log('Resolve:', from, to);
 
-        var filepath,
-            name = file,
-            filename,
-            isNodeModule = false,
-            dir,
-            resolved;
+        var resolveRelative = function(from, to) {
+            var file = from.split('/');
+            if (file.length > 1) {
+                file.pop();
+            }
+            to.split('/').forEach(function(part) {
+                if (part === '.') {
+                    return;
+                }
 
-        if (/^\.?[a-zA-Z0-9_-]+$/.test(file)) {
-            // console.log('Load from <modules>');
+                if (part === '..') {
+                    file.pop();
+                    return;
+                }
+
+                file.push(part);
+            });
+
+            file = file.join('/');
+            if (!/\.js$/.test(file)) {
+                file = file + '.js';
+            }
+
+            return {
+                name: file,
+                path: path.join(this.root, file)
+            };
+        }.bind(this);
+
+        var resolveModule = function(from, to) {
+            var resolved;
+
             if (this.libDir) {
-                resolved = this.loadModule('lib', file);
+                resolved = this.loadModule('lib', to);
             }
 
             if (!resolved && this.bwrDir) {
-                resolved = this.loadModule('bower', file);
+                resolved = this.loadModule('bower', to);
             }
             
             if (!resolved && this.npmDir) {
-                resolved = this.loadModule('npm', file);
+                resolved = this.loadModule('npm', to);
             }
 
-            if (!resolved) {
-                throw new Error(
-                    'Module ' + file + ' not found! Use npm or bower to install it!\n' +
-                    ' npm install ' + file + ' --save\n' +
-                    ' bower install ' + file + '\n');
-            }
-        }
-        else if (file.charAt(0) === '$') {
-            var pos = file.indexOf('/');
-            var type = file.slice(1, pos);
-            file = file.substr(pos + 1);
+            return {
+                name: resolved.prefix + '/' + to,
+                path: resolved ? resolved.path : ''
+            };
+        }.bind(this);
 
-            // console.log('TYPE', type, file);
-            resolved = this.loadModule(type, file);
+        var resolved;
 
+        if (/^\$(npm|bower|lib)\/(.+)$/.test(to)) { //Its a module
+            var type = RegExp.$1;
+            resolved = this.loadModule(type, to);
+            
+            return {
+                name: RegExp.$2,
+                path: resolved ? resolved.path : ''
+            };
         }
-        else if (file.charAt(0) === '.') {
-            if (!/\.js(on)?$/.test(file)) {
-                name += '.js';
+        else if (/\//.test(to)) { //Contains a slash
+            if (/^\.\.?\//.test(to)) {
+                return resolveRelative(from, to);
             }
-            filepath = path.join(this.root, name);
         }
-        else if(file.charAt(0) === '/') {
-            if (!/\.js(on)?$/.test(file)) {
-                name += '.js';
+        else if (/\./.test(to)) { //Contains a dot, but no slash
+            resolved = resolveRelative(from, to);
+            if (grunt.file.exists(resolved.path)) {
+                return resolved;
             }
-            filepath = name;
+            else {
+                return resolveModule(from, to);
+            }
         }
         else {
-            // console.log('OTHER', file);
-            var modulesDir = path.join(this.root, this.libDir);
-            while(true) {
-                if (!fs.existsSync(modulesDir)) {
-                    modulesDir = path.join(modulesDir, '../../', this.libDir);
-                    if (modulesDir === '/' + this.libDir) {
-                        throw new Error('No ' + this.libDir + ' folder found!');
-                    }
-                }
-                else {
-                    break;
-                }
-            }
-
-            var nodeModule = path.join(modulesDir, file);
-            dir = nodeModule;
-            isNodeModule = true;
-            
-            if (name.indexOf('/') !== -1) {
-                filepath = nodeModule;
-                if (!/\.js(on)?$/.test(name)) {
-                    name += '.js';
-                    filepath += '.js';
-                }
-            }
-            else if (grunt.file.exists(nodeModule)) {
-                var bwr = require(path.join(nodeModule, '/bower.json'));
-                var pkg = require(path.join(nodeModule, '/package.json'));
-                
-                if (grunt.file.exists(bwr)) {
-                    filename = bwr.main;
-                    if (Array.isArray(bwr.main)) {
-                        for (var i = 0, len = bwr.main.length; i < len; i++) {
-                            if (/\.js$/.test(bwr.main[i])) {
-                                filename = bwr.main[i];
-                                break;
-                            }
-                        }
-                    }
-
-                    filepath = path.join(nodeModule, filename);
-                    filename = name + filepath.replace(dir, '');
-                }
-                else if (pkg.browser) {
-                    filename = pkg.browser;
-                    filepath = path.join(nodeModule, filename);
-                    filename = name + filepath.replace(dir, '');
-                }
-                else if (pkg.main) {
-                    filename = pkg.main;
-                    filepath = path.join(nodeModule, filename);
-                    filename = name + filepath.replace(dir, '');
-                }
-                else {
-                    filename = 'index.js';
-                    filepath = path.join(nodeModule, filename);
-                    filename = name + filepath.replace(dir, '');
-                }
-            } else {
-                throw new Error(
-                    'Module ' + file + ' not found! Use npm or bower to install it!\n' +
-                    ' npm install ' + file + ' --save\n' +
-                    ' bower install ' + file + '\n');
-            }
+            return resolveModule(from, to);
         }
 
-        resolved = resolved || {
-            name: name,
-            path: filepath,
-            isNodeModule: isNodeModule
+        return {
+            name: to,
+            path: resolved ? resolved.path : ''
         };
-
-        if (dir) {
-            resolved.dir = dir;
-        }
-
-        if (filename) {
-            resolved.filename = filename;
-        }
-
-        // console.log('Resolved:', resolved);
-
-        return resolved;
     };
 
     Superjoin.prototype.getConf = function() {
@@ -413,7 +361,7 @@ module.exports = (function() {
                     var pkg = grunt.file.readJSON(file);
                     if (pkg && pkg.superjoin) {
                         cnf = pkg.superjoin;
-                        if (!/^\.{0,2}\//.test(cnf.main)) {
+                        if (cnf.main && !/^\.{0,2}\//.test(cnf.main)) {
                             cnf.main = './' + cnf.main;
                         }
 
@@ -423,7 +371,7 @@ module.exports = (function() {
 
                 var sjc = grunt.file.readJSON(file);
                 if (sjc) {
-                    if (!/^\.{0,2}\//.test(sjc.main)) {
+                    if (sjc.main && !/^\.{0,2}\//.test(sjc.main)) {
                         sjc.main = './' + sjc.main;
                     }
                 }

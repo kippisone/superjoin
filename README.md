@@ -36,3 +36,19 @@ var myModule = require('./modules/myModule.js');
 //Load from node_modules
 var $ = require('jquery');
 ```
+
+NOTES
+-----
+
+window.require
+
+FROM                REQUIRE                 RESOLVED
+
+index.js            ./foo                   ./foo.js
+index.js            ./foo.js                ./foo.js
+foo/bar.js          ../blub.js              ./blub.js
+
+index.js            mymodule                mymodule
+index.js            mymodule/test.js        mymodule/test.js
+
+mymodule/test.js    ./setup                 mymodule/setup.js
