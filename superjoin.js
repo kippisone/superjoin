@@ -20,6 +20,8 @@ module.exports = (function() {
         this.bwrDir = conf.bwrDir || null;
         this.npmDir = conf.npmDir || null;
 
+        this.modulePaths = {};
+
         if (!this.bwrDir) {
             dir = path.join(this.workingDir, 'bower_components');
             while (true) {
@@ -55,6 +57,15 @@ module.exports = (function() {
         if (this.verbose) {
             grunt.log.ok('Reading files ...');
         }
+
+        if (this.root.charAt(0) !== '/') {
+            //Root is relative
+            this.root = path.join(process.cwd(), this.root);
+        }
+
+        //addModule expects a file path
+        var rootFile = path.join(this.root, 'index.js');
+
         var out = this.readFile(path.join(__dirname, 'public/require.js'));
         if (this.banner) {
             out = this.banner.trim() + '\n\n' + out;
@@ -64,7 +75,7 @@ module.exports = (function() {
             if (this.verbose) {
                 grunt.log.ok(' ... reading', file);
             }
-            out += this.addModule(file);
+            out += this.addModule(rootFile, file);
         }, this);
 
         if (this.autoload) {
@@ -75,37 +86,38 @@ module.exports = (function() {
             if (this.verbose) {
                 grunt.log.ok(' ... reading main', main);
             }
-            out += this.addModule(main);
-            out += 'require(\'' + this.resolve(this.root, main).name + '\');\n';
+
+            out += this.addModule(rootFile, main);
+            out += 'require(\'' + this.resolve(rootFile, main).name + '\');\n';
         }
 
         return out;
     };
 
-    Superjoin.prototype.addModule = function(file) {
-        file = this.resolve(this.root, file);
-        var module = 'require.register(\'' + (
-            file.path ? file.name + '\', \'' + file.path : file.name
-        ) + '\', function(module, exports, require) {\n';
+    Superjoin.prototype.addModule = function(parent, file) {
+        // console.log('ADD', parent, file);
+        var resolved = this.resolve(parent, file);
+        // console.log('RES', resolved);
+        var module = 'require.register(\'' + resolved.name + '\', function(module, exports, require) {\n';
 
-        if (this.modules.indexOf(file.path) !== -1) {
+        if (this.modules.indexOf(resolved.path) !== -1) {
             if (this.verbose) {
-                grunt.log.ok('Module "%s" already added!', file.name);
+                grunt.log.ok('Module "%s" already added!', resolved.name);
                 return '';
             }            
         }
 
         if (this.verbose) {
-            grunt.log.ok(' ... add module', file.path);
+            grunt.log.ok(' ... add module', resolved);
         }
 
-        var source = this.readFile(file.path);
-        module += (/\.json$/.test(file) ? 'module.exports = ' : '') + source;
+        var source = this.readFile(resolved.path);
+        module += (/\.json$/.test(resolved.path) ? 'module.exports = ' : '') + source;
         module += '\n});\n';
-        this.modules.push(file.path);
+        this.modules.push(resolved.path);
 
-        if (file.isNodeModule) {
-            module += this.grepSubmodules(file, source);
+        if (resolved.isModule) {
+            module += this.grepSubmodules(resolved, source);
         }
 
         return module;
@@ -155,7 +167,7 @@ module.exports = (function() {
             }
 
             subModule = newPath.join('/');
-            out += this.addModule(subModule);
+            out += this.addModule(module.path, subModule);
         }
 
         return out;
@@ -163,6 +175,14 @@ module.exports = (function() {
 
     Superjoin.prototype.readFile = function(file) {
         return grunt.file.read(file);
+    };
+
+    Superjoin.prototype.getModulePath = function(mod) {
+        if (this.modulePaths[mod]) {
+            return this.modulePaths[mod];
+        }
+
+        return '';
     };
 
     Superjoin.prototype.loadModule = function(moduleType, file) {
@@ -253,35 +273,81 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.resolve = function(from, to) {
-        console.log('Resolve:', from, to);
+        // console.log('Resolve:', from, to);
 
-        var resolveRelative = function(from, to) {
-            var file = from.split('/');
-            if (file.length > 1) {
-                file.pop();
+        var fromDir = path.dirname(from);
+        var resolved;
+
+        // var resolveRelative = function(from, to) {
+        //     var file = from.split('/'),
+        //         mod = file[0];
+        //     if (file.length > 1) {
+        //         file.pop();
+        //     }
+
+        //     to.split('/').forEach(function(part) {
+        //         if (part === '.') {
+        //             return;
+        //         }
+
+        //         if (part === '..') {
+        //             file.pop();
+        //             return;
+        //         }
+
+        //         file.push(part);
+        //     });
+
+        //     file = file.join('/');
+        //     if (!/\.js$/.test(file)) {
+        //         file = file + '.js';
+        //     }
+
+        //     console.log('MOD', this.modulePaths, mod);
+        //     var rootPath = mod === '.' ? this.root : this.modulePaths[mod];
+
+        //     return path.join(rootPath, file);
+        // }.bind(this);
+        var getPathProperties = function(path) {
+            var resolved;
+
+            if (this.libDir && path.indexOf(this.libDir) === 0) {
+                resolved = {
+                    path: path,
+                    name: path.replace(this.libDir.replace(/\/$/) + '/', ''),
+                    dir: this.libDir,
+                    isModule: true
+                };
             }
-            to.split('/').forEach(function(part) {
-                if (part === '.') {
-                    return;
-                }
 
-                if (part === '..') {
-                    file.pop();
-                    return;
-                }
-
-                file.push(part);
-            });
-
-            file = file.join('/');
-            if (!/\.js$/.test(file)) {
-                file = file + '.js';
+            if (!resolved && this.bwrDir && path.indexOf(this.bwrDir) === 0) {
+                resolved = {
+                    path: path,
+                    name: path.replace(this.bwrDir.replace(/\/$/) + '/', ''),
+                    dir: this.bwrDir,
+                    isModule: true
+                };
+            }
+            
+            if (!resolved && this.npmDir && path.indexOf(this.npmDir) === 0) {
+                resolved = {
+                    path: path,
+                    name: path.replace(this.npmDir.replace(/\/$/) + '/', ''),
+                    dir: this.npmDir,
+                    isModule: true
+                };
             }
 
-            return {
-                name: file,
-                path: path.join(this.root, file)
-            };
+            if (!resolved) {
+                resolved = {
+                    path: path,
+                    name: path.replace(this.root.replace(/\/$/), '.'),
+                    dir: this.root,
+                    isModule: false
+                };
+            }
+
+            return resolved;
         }.bind(this);
 
         var resolveModule = function(from, to) {
@@ -299,44 +365,52 @@ module.exports = (function() {
                 resolved = this.loadModule('npm', to);
             }
 
-            return {
-                name: resolved.prefix + '/' + to,
-                path: resolved ? resolved.path : ''
-            };
+
+            // console.log('RESOLVED', resolved);
+            return resolved;
         }.bind(this);
 
-        var resolved;
+        // var resolved;
 
         if (/^\$(npm|bower|lib)\/(.+)$/.test(to)) { //Its a module
             var type = RegExp.$1;
-            resolved = this.loadModule(type, to);
-            
-            return {
-                name: RegExp.$2,
-                path: resolved ? resolved.path : ''
-            };
+            resolved = this.loadModule(type, RegExp.$2);
         }
         else if (/\//.test(to)) { //Contains a slash
             if (/^\.\.?\//.test(to)) {
-                return resolveRelative(from, to);
+                resolved = path.resolve(fromDir, to);
+                if (!/\.[a-z]{2,4}$/.test(resolved)) {
+                    resolved += '.js';
+                }
+
+                resolved = getPathProperties(resolved);
             }
         }
         else if (/\./.test(to)) { //Contains a dot, but no slash
-            resolved = resolveRelative(from, to);
-            if (grunt.file.exists(resolved.path)) {
-                return resolved;
+            resolved = path.resolve(fromDir, to);
+            if (grunt.file.exists(resolved)) {
+                resolved = getPathProperties(resolved);
             }
             else {
-                return resolveModule(from, to);
+                resolved = resolveModule(from, to);
             }
         }
         else {
-            return resolveModule(from, to);
+            resolved = resolveModule(from, to);
         }
 
+        // console.log('RESOLVED:', {
+        //     path: resolved.path,
+        //     name: resolved.name,
+        //     dir: resolved.dir,
+        //     isModule: resolved.isModule
+        // });
+
         return {
-            name: to,
-            path: resolved ? resolved.path : ''
+            path: resolved.path,
+            name: resolved.name,
+            dir: resolved.dir,
+            isModule: resolved.isModule
         };
     };
 

@@ -16,7 +16,6 @@
      * @return {any}      Returns the loaded module.
      */
     var require = function(file) {
-        // console.log('REQUIRE', file, this);
         if (require.alias && require.alias[file]) {
             file = require.alias[file];
         }
@@ -26,15 +25,13 @@
             file: file
         };
 
-        file = require.resolve(file, this ? this.file : null);
+        file = require.resolve(this ? this.file : './', file);
 
         var requireFunc = require.bind({
             file: file
         });
 
         if (window.require.cache[file]) {
-            // console.log(' ... get from cache', file);
-            
             if (window.require.cache[file].obj) {
                 return window.require.cache[file].obj;
             }
@@ -52,7 +49,6 @@
             .concat('//', location.host)
             .concat(file.substr(1));
         
-        // console.log(' ... load from remote', remoteFile);
         var xhr = new XMLHttpRequest();
         xhr.open('GET', remoteFile, false);
         xhr.send();
@@ -84,13 +80,15 @@
         return window.require.cache[file].obj;
     };
 
-    require.resolve = function(path, parent) {
+    require.resolve = function(from, to) {
         var resolved = [];
-        if (path.charAt(0) === '.') {
-            var newPath = parent || '.';
-            newPath = newPath.split('/');
-            newPath.pop();
-            newPath = newPath.concat(path.split('/'));
+        if (/[\.\/]/.test(to)) {
+            var newPath = from.split('/');
+            if (from.charAt(0) === '.') {
+                newPath.pop();
+            }
+
+            newPath = newPath.concat(to.split('/'));
 
             newPath.forEach(function(p) {
                 if (p === '..') {
@@ -104,22 +102,30 @@
                 resolved.push(p);
             });
 
-            if (!parent ||parent.charAt(0) === '.') {
+            if (!from || from.charAt(0) === '.') {
                 resolved.unshift('.');
+            }
+
+            if (!/^\./.test(from) && !/^\./.test(to)) {
+                resolved.shift();
+            }
+
+            resolved = resolved.join('/');
+            if (to.indexOf('/') === -1) {
+                //Could also be a module
+                if (!this.moduleExists(resolved)) {
+                    resolved = resolved.substr(2);
+                }
             }
         }
         else {
-            // console.log(' ... resolve path to', path);
-            return path;
+            return to;
         }
 
-        resolved = resolved.join('/');
         if (!/\.js(on)?$/.test(resolved)) {
             resolved += '.js';
         }
 
-
-        // console.log(' ... resolve path to', resolved);
         return resolved;
     };
 
@@ -136,28 +142,32 @@
         }
     };
 
+    require.moduleExists = function(mod) {
+        return !!require.cache[mod];
+    };
+
     require.cache = {};
     require.alias = {};
 
     window.require = require;
 
 })(window);
-
+require.register('module2', function(module, exports, require) {
+module.exports = function() {
+    'use strict';
+    return 'Module 2';  
+};
+});
+require.register('module3', function(module, exports, require) {
+module.exports = function() {
+    'use strict';
+    return 'Module 3 browser';  
+};
+});
 require.register('./modules/module1/index.js', function(module, exports, require) {
 module.exports = function() {
     'use strict';
     
 };
 });
-require.register('module2', 'module2/index.js', function(module, exports, require) {
-module.exports = function() {
-    'use strict';
-    return 'Module 2';  
-};
-});
-require.register('module3', 'module3/browser.js', function(module, exports, require) {
-module.exports = function() {
-    'use strict';
-    return 'Module 3 browser';  
-};
-});
+require('./modules/module1/index.js');
