@@ -5,5 +5,10 @@
         "public/*.js",
         "superjoin.js"
     ],
+    "watch": [
+        "modules/*.js",
+        "public/require.js",
+        "superjoin.js"
+    ],
     "tests": "tests/*.spec.js"
 }

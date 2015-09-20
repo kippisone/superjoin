@@ -1,0 +1,9 @@
+{
+    "name": "superjoin-example",
+    "main": "index.js",
+    "files": [
+        "jquery",
+        "./lib/foo/foo.js",
+        "./lib/bar/bar.js"
+    ]
+}

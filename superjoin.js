@@ -1,8 +1,7 @@
 module.exports = (function() {
     'use strict';
 
-    var path = require('path'),
-        fs = require('fs');
+    var path = require('path');
     
     var grunt = require('grunt');
     
@@ -11,8 +10,8 @@ module.exports = (function() {
 
         var dir;
 
-        this.root = conf.root || process.cwd();
         this.workingDir = conf.workingDir || process.cwd();
+        this.root = conf.root || this.workingDir || process.cwd();
         this.modules = [];
         this.confFiles = [];
 
@@ -87,8 +86,9 @@ module.exports = (function() {
                 grunt.log.ok(' ... reading main', main);
             }
 
-            out += this.addModule(rootFile, main);
-            out += 'require(\'' + this.resolve(rootFile, main).name + '\');\n';
+            main = this.resolve(rootFile, main);
+            out += this.addModule(rootFile, main.name);
+            out += 'require(\'' + main.name + '\');\n';
         }
 
         return out;
@@ -97,8 +97,14 @@ module.exports = (function() {
     Superjoin.prototype.addModule = function(parent, file) {
         // console.log('ADD', parent, file);
         var resolved = this.resolve(parent, file);
-        // console.log('RES', resolved);
-        var module = 'require.register(\'' + resolved.name + '\', function(module, exports, require) {\n';
+        var module = '';
+        var name = resolved.name;
+        if (resolved.alias) {
+            module += 'require.alias[\'' + resolved.name + '\'] = \'' + resolved.alias + '\';\n';
+            name = resolved.alias;
+        }
+
+        module += 'require.register(\'' + name + '\', function(module, exports, require) {\n';
 
         if (this.modules.indexOf(resolved.path) !== -1) {
             if (this.verbose) {
@@ -144,29 +150,30 @@ module.exports = (function() {
                 continue;
             }
 
-            var name = path.relative(path.join(module.dir, '..'), module.path);
-            var split = name.split('/');
-            split.pop();
-            split = split.concat(subModule.split('/'));
-            var newPath = [];
-            if (module.prefix) {
-                newPath.push(module.prefix);
-            }
+            // var name = path.relative(path.join(module.dir), module.path);
+            // console.log('NAME', name);
+            // var split = name.split('/');
+            // split.pop();
+            // split = split.concat(subModule.split('/'));
+            // var newPath = [];
+            // if (module.prefix) {
+            //     newPath.push(module.prefix);
+            // }
 
-            for (var i = 0, len = split.length; i < len; i++) {
-                if (split[i] === '..') {
-                    newPath.pop();
-                    continue;
-                }
+            // for (var i = 0, len = split.length; i < len; i++) {
+            //     if (split[i] === '..') {
+            //         newPath.pop();
+            //         continue;
+            //     }
 
-                if (split[i] === '.') {
-                    continue;
-                }
+            //     if (split[i] === '.') {
+            //         continue;
+            //     }
 
-                newPath.push(split[i]);
-            }
+            //     newPath.push(split[i]);
+            // }
 
-            subModule = newPath.join('/');
+            // subModule = newPath.join('/');
             out += this.addModule(module.path, subModule);
         }
 
@@ -175,14 +182,6 @@ module.exports = (function() {
 
     Superjoin.prototype.readFile = function(file) {
         return grunt.file.read(file);
-    };
-
-    Superjoin.prototype.getModulePath = function(mod) {
-        if (this.modulePaths[mod]) {
-            return this.modulePaths[mod];
-        }
-
-        return '';
     };
 
     Superjoin.prototype.loadModule = function(moduleType, file) {
@@ -206,6 +205,7 @@ module.exports = (function() {
                 throw new Error('Unknowd module type ' + moduleType + '!');
         }
 
+        // console.log('MOOOD', moduleDir, file, moduleType);
         var nodeModule = path.join(moduleDir, file),
             name = file,
             filepath,
@@ -264,57 +264,27 @@ module.exports = (function() {
 
         return {
             name: name,
-            dir: dir,
+            dir: moduleDir,
             path: filepath,
-            isNodeModule: true,
             isModule: true,
+            isNodeModule: true,
             prefix: modulePrefix
         };
     };
 
     Superjoin.prototype.resolve = function(from, to) {
-        // console.log('Resolve:', from, to);
+        // console.log('Resolve: "%s" "%s"', from, to);
 
         var fromDir = path.dirname(from);
         var resolved;
 
-        // var resolveRelative = function(from, to) {
-        //     var file = from.split('/'),
-        //         mod = file[0];
-        //     if (file.length > 1) {
-        //         file.pop();
-        //     }
-
-        //     to.split('/').forEach(function(part) {
-        //         if (part === '.') {
-        //             return;
-        //         }
-
-        //         if (part === '..') {
-        //             file.pop();
-        //             return;
-        //         }
-
-        //         file.push(part);
-        //     });
-
-        //     file = file.join('/');
-        //     if (!/\.js$/.test(file)) {
-        //         file = file + '.js';
-        //     }
-
-        //     console.log('MOD', this.modulePaths, mod);
-        //     var rootPath = mod === '.' ? this.root : this.modulePaths[mod];
-
-        //     return path.join(rootPath, file);
-        // }.bind(this);
         var getPathProperties = function(path) {
             var resolved;
 
             if (this.libDir && path.indexOf(this.libDir) === 0) {
                 resolved = {
                     path: path,
-                    name: path.replace(this.libDir.replace(/\/$/) + '/', ''),
+                    name: path.replace(this.libDir.replace(/\/$/, '') + '/', ''),
                     dir: this.libDir,
                     isModule: true
                 };
@@ -323,7 +293,7 @@ module.exports = (function() {
             if (!resolved && this.bwrDir && path.indexOf(this.bwrDir) === 0) {
                 resolved = {
                     path: path,
-                    name: path.replace(this.bwrDir.replace(/\/$/) + '/', ''),
+                    name: path.replace(this.bwrDir.replace(/\/$/, '') + '/', ''),
                     dir: this.bwrDir,
                     isModule: true
                 };
@@ -332,7 +302,7 @@ module.exports = (function() {
             if (!resolved && this.npmDir && path.indexOf(this.npmDir) === 0) {
                 resolved = {
                     path: path,
-                    name: path.replace(this.npmDir.replace(/\/$/) + '/', ''),
+                    name: path.replace(this.npmDir.replace(/\/$/, '') + '/', ''),
                     dir: this.npmDir,
                     isModule: true
                 };
@@ -341,7 +311,7 @@ module.exports = (function() {
             if (!resolved) {
                 resolved = {
                     path: path,
-                    name: path.replace(this.root.replace(/\/$/), '.'),
+                    name: path.replace(this.root.replace(/\/$/, ''), '.'),
                     dir: this.root,
                     isModule: false
                 };
@@ -350,19 +320,21 @@ module.exports = (function() {
             return resolved;
         }.bind(this);
 
-        var resolveModule = function(from, to) {
+        var resolveModule = function(file) {
             var resolved;
 
+            // console.log('RESMOD', file);
+
             if (this.libDir) {
-                resolved = this.loadModule('lib', to);
+                resolved = this.loadModule('lib', file);
             }
 
             if (!resolved && this.bwrDir) {
-                resolved = this.loadModule('bower', to);
+                resolved = this.loadModule('bower', file);
             }
             
             if (!resolved && this.npmDir) {
-                resolved = this.loadModule('npm', to);
+                resolved = this.loadModule('npm', file);
             }
 
 
@@ -384,6 +356,27 @@ module.exports = (function() {
                 }
 
                 resolved = getPathProperties(resolved);
+                // console.log('OK', resolved);
+            }
+            else {
+                //Handle module path
+                resolved = to;
+                if (!/\.[a-z]{2,4}$/.test(resolved)) {
+                    resolved += '.js';
+                }
+
+                var modPath = to.split('/');
+                var mod = resolveModule(modPath[0]);
+
+                // console.log('MOD', mod);
+
+                resolved = {
+                    name: to,
+                    dir: mod.dir,
+                    isModule: mod.isModule,
+                    path: path.join(mod.dir, to)
+                };
+                
             }
         }
         else if (/\./.test(to)) { //Contains a dot, but no slash
@@ -392,11 +385,11 @@ module.exports = (function() {
                 resolved = getPathProperties(resolved);
             }
             else {
-                resolved = resolveModule(from, to);
+                resolved = resolveModule(to);
             }
         }
         else {
-            resolved = resolveModule(from, to);
+            resolved = resolveModule(to);
         }
 
         // console.log('RESOLVED:', {
@@ -405,12 +398,20 @@ module.exports = (function() {
         //     dir: resolved.dir,
         //     isModule: resolved.isModule
         // });
+        // 
 
+        //Do we need an alias?
+        if (path.join(resolved.dir, resolved.name) !== resolved.path) {
+            resolved.alias = path.relative(resolved.dir, resolved.path);
+        }
+
+        // console.log('RESOLVED:', resolved);
         return {
             path: resolved.path,
             name: resolved.name,
             dir: resolved.dir,
-            isModule: resolved.isModule
+            isModule: resolved.isModule,
+            alias: resolved.alias
         };
     };
 

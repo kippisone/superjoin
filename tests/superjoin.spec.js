@@ -15,6 +15,7 @@ describe('Superjoin', function() {
         { from: '/srv/supertest/index.js', to: 'mymodule', res: 'mymodule', isNpm: true },
         { from: '/srv/supertest/index.js', to: 'mymodule.js', res: 'mymodule.js', isNpm: true, noFile:true },
         { from: '/srv/supertest/node_modules/mymodule/dist/index.js', to: '../mymodule.js', res: 'mymodule/mymodule.js', isNpm: true, noFile:true },
+        { from: '/srv/supertest/node_modules/mymodule/dist/index.js', to: 'mymodule/dist/foo.js', res: 'mymodule/dist/foo.js', isNpm: true, noFile:true },
         { from: '/srv/supertest/index.js', to: '$npm/mymodule', res : 'mymodule', isNpm: true },
         { from: '/srv/supertest/index.js', to: '$npm/mymodule/foo.js', res : 'mymodule/foo.js', isNpm: true },
         { from: '/srv/supertest/index.js', to: '$bower/mymodule', res : 'mymodule', isBower: true },
@@ -90,12 +91,15 @@ describe('Superjoin', function() {
                     fileExistsStub = sinon.stub(grunt.file, 'exists');
                     fileExistsStub.returns(!p.noFile);
                 
+                var alias;
+                
                 var resolved = superjoin.resolve(p.from, p.to);
                 expect(resolved).to.eql({
                     path: path.join(dir, p.res),
                     dir: dir,
                     name: p.res,
-                    isModule: isModule
+                    isModule: isModule,
+                    alias: alias
                 });
 
                 if (hasStub) {
@@ -210,14 +214,14 @@ describe('Superjoin', function() {
                 isModule: true
             });
 
-            resolveStub.withArgs('/srv/supertest/node_modules/test/index.js', 'test/lib/test.js').returns({
+            resolveStub.withArgs('/srv/supertest/node_modules/test/index.js', './lib/test.js').returns({
                 name: 'test/lib/test.js',
                 path: '/srv/supertest/node_modules/test/lib/test.js',
                 dir: '/srv/supertest/node_modules/test',
                 isModule: true
             });
 
-            resolveStub.withArgs('/srv/supertest/node_modules/test/lib/test.js', 'test/lib/test2.js').returns({
+            resolveStub.withArgs('/srv/supertest/node_modules/test/lib/test.js', './test2.js').returns({
                 name: 'test/lib/test2.js',
                 path: '/srv/supertest/node_modules/test/lib/test2.js',
                 dir: '/srv/supertest/node_modules/test',
