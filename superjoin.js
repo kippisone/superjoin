@@ -53,6 +53,14 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.join = function(files, main) {
+        return this.map(files, main).map(function(item) {
+            return item.src;
+        }).join('');
+    };
+
+    Superjoin.prototype.map = function(files, main) {
+        var out = [];
+
         if (this.verbose) {
             grunt.log.ok('Reading files ...');
         }
@@ -62,33 +70,57 @@ module.exports = (function() {
             this.root = path.join(process.cwd(), this.root);
         }
 
+        if (this.verbose) {
+            grunt.log.ok('Working dir:', this.workingDir);
+            grunt.log.ok('Root dir:', this.root);
+        }
+
         //addModule expects a file path
         var rootFile = path.join(this.root, 'index.js');
 
-        var out = this.readFile(path.join(__dirname, 'public/require.js'));
         if (this.banner) {
-            out = this.banner.trim() + '\n\n' + out;
+            out.push({
+                path: '',
+                type: 'banner',
+                src: this.banner.trim() + '\n\n'
+            });
         }
 
+        if (!this.noRequire) {
+            out.push({
+                path: '',
+                type: 'require',
+                src: this.readFile(path.join(__dirname, 'public/require.js'))
+            });
+        }
+        
         files.forEach(function(file) {
             if (this.verbose) {
                 grunt.log.ok(' ... reading', file);
             }
-            out += this.addModule(rootFile, file);
+            out = out.concat(this.addModule(rootFile, file));
         }, this);
 
         if (this.autoload) {
-            out += '//Enable autoloading\nwindow.require.autoload = true;\n\n';
+            out.push({
+                file: '',
+                src: '//Enable autoloading\nwindow.require.autoload = true;\n\n'
+            });
         }
 
         if (main) {
             if (this.verbose) {
-                grunt.log.ok(' ... reading main', main);
+                grunt.log.ok(' ... reading main', main, rootFile);
             }
 
             main = this.resolve(rootFile, main);
-            out += this.addModule(rootFile, main.name);
-            out += 'require(\'' + main.name + '\');\n';
+            // console.log('MAIN', main);
+            out = out.concat(this.addModule(rootFile, main.name));
+            out.push({
+                path: '',
+                type: 'init-call',
+                src: 'require(\'' + main.name + '\');\n'
+            });
         }
 
         return out;
@@ -120,19 +152,26 @@ module.exports = (function() {
         var source = this.readFile(resolved.path);
         module += (/\.json$/.test(resolved.path) ? 'module.exports = ' : '') + source;
         module += '\n});\n';
+
+        var out = [{
+            path: name,
+            src: module
+        }];
+
         this.modules.push(resolved.path);
 
         if (resolved.isModule) {
-            module += this.grepSubmodules(resolved, source);
+            out = out.concat(this.grepSubmodules(resolved, source));
         }
 
-        return module;
+        return out;
     };
 
     Superjoin.prototype.grepSubmodules = function(module, source) {
         // console.log('GREP', module);
         var pattern = /require\((.+?)\)/g,
-            out = '';
+            out = [];
+
         while(true) {
             var match = pattern.exec(source);
             if (!match) {
@@ -150,31 +189,7 @@ module.exports = (function() {
                 continue;
             }
 
-            // var name = path.relative(path.join(module.dir), module.path);
-            // console.log('NAME', name);
-            // var split = name.split('/');
-            // split.pop();
-            // split = split.concat(subModule.split('/'));
-            // var newPath = [];
-            // if (module.prefix) {
-            //     newPath.push(module.prefix);
-            // }
-
-            // for (var i = 0, len = split.length; i < len; i++) {
-            //     if (split[i] === '..') {
-            //         newPath.pop();
-            //         continue;
-            //     }
-
-            //     if (split[i] === '.') {
-            //         continue;
-            //     }
-
-            //     newPath.push(split[i]);
-            // }
-
-            // subModule = newPath.join('/');
-            out += this.addModule(module.path, subModule);
+            out = out.concat(this.addModule(module.path, subModule));
         }
 
         return out;
@@ -338,7 +353,7 @@ module.exports = (function() {
             }
 
 
-            // console.log('RESOLVED', resolved);
+            // console.log('MOD RESOLVED', resolved);
             return resolved;
         }.bind(this);
 
@@ -392,13 +407,13 @@ module.exports = (function() {
             resolved = resolveModule(to);
         }
 
-        // console.log('RESOLVED:', {
-        //     path: resolved.path,
-        //     name: resolved.name,
-        //     dir: resolved.dir,
-        //     isModule: resolved.isModule
-        // });
-        // 
+        /*console.log('RESOLVED:', {
+            path: resolved.path,
+            name: resolved.name,
+            dir: resolved.dir,
+            isModule: resolved.isModule
+        });*/
+        
 
         //Do we need an alias?
         if (path.join(resolved.dir, resolved.name) !== resolved.path) {
