@@ -21,6 +21,11 @@ module.exports = (function() {
 
         this.modulePaths = {};
 
+        this.headerAdded = false;
+        this.sourceMaps = false;
+        this.files = [];
+        this.rcalls = [];
+
         if (!this.bwrDir) {
             dir = path.join(this.workingDir, 'bower_components');
             while (true) {
@@ -52,6 +57,16 @@ module.exports = (function() {
         }
     };
 
+    Superjoin.prototype.add = function(file) {
+        this.files.push(file);
+    };
+
+    Superjoin.prototype.flush = function(main) {
+        var res = this.map(this.files, main);
+        this.files = [];
+        return res;
+    };
+
     Superjoin.prototype.join = function(files, main) {
         return this.map(files, main).map(function(item) {
             return item.src;
@@ -60,6 +75,10 @@ module.exports = (function() {
 
     Superjoin.prototype.map = function(files, main) {
         var out = [];
+
+        if (this.files) {
+            files = this.files.concat(files || []);
+        }
 
         if (this.verbose) {
             grunt.log.ok('Reading files ...');
@@ -78,7 +97,7 @@ module.exports = (function() {
         //addModule expects a file path
         var rootFile = path.join(this.root, 'index.js');
 
-        if (this.banner) {
+        if (this.banner && this.headerAdded === false) {
             out.push({
                 path: '',
                 type: 'banner',
@@ -86,14 +105,18 @@ module.exports = (function() {
             });
         }
 
-        if (!this.noRequire) {
+        if (!this.noRequire && this.headerAdded === false) {
             out.push({
                 path: '',
                 type: 'require',
                 src: this.readFile(path.join(__dirname, 'public/require.js'))
             });
         }
+
+        this.headerAdded = true;
         
+        console.log('FILES', files);
+
         files.forEach(function(file) {
             if (this.verbose) {
                 grunt.log.ok(' ... reading', file);
@@ -114,21 +137,46 @@ module.exports = (function() {
             }
 
             main = this.resolve(rootFile, main);
-            // console.log('MAIN', main);
             out = out.concat(this.addModule(rootFile, main.name));
+            out.push(this.addRequireCall(main.name));
+        }
+
+        if (this.rcalls.length) {
+            out = out.concat(this.rcalls);
+        }
+
+        if (this.sourceMaps) {
             out.push({
                 path: '',
-                type: 'init-call',
-                src: 'require(\'' + main.name + '\');\n'
+                type: 'sourcemaps',
+                src: '\n//# sourceMappingURL=' + (this.sourceMapsFile || rootFile + '.map') + '\n'
             });
         }
 
         return out;
     };
 
+    Superjoin.prototype.addRequireCall = function(name) {
+        return this.rcalls.push({
+            path: '',
+            type: 'init-call',
+            src: 'require(\'' + name + '\');\n'
+        });
+    };
+
     Superjoin.prototype.addModule = function(parent, file) {
         // console.log('ADD', parent, file);
-        var resolved = this.resolve(parent, file);
+        var resolved;
+        if (typeof file === 'object') {
+            resolved = {
+                name: file.name,
+                path: file.path
+            };
+        }
+        else {
+            resolved = this.resolve(parent, file);
+        }
+
         var module = '';
         var name = resolved.name;
         if (resolved.alias) {
