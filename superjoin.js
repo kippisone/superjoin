@@ -1,3 +1,6 @@
+var SourceMapGenerator = require('source-map').SourceMapGenerator;
+var SourceNode = require('source-map').SourceNode;
+
 module.exports = (function() {
     'use strict';
 
@@ -55,6 +58,12 @@ module.exports = (function() {
                 }
             }
         }
+
+        this.sourceMapGenerator = new SourceMapGenerator({
+            file: 'sourcemaps.map'
+        });
+
+        this.sourceNode = new SourceNode();
     };
 
     Superjoin.prototype.add = function(file) {
@@ -115,7 +124,7 @@ module.exports = (function() {
 
         this.headerAdded = true;
         
-        console.log('FILES', files);
+        // console.log('FILES', files);
 
         files.forEach(function(file) {
             if (this.verbose) {
@@ -145,13 +154,15 @@ module.exports = (function() {
             out = out.concat(this.rcalls);
         }
 
-        if (this.sourceMaps) {
-            out.push({
-                path: '',
-                type: 'sourcemaps',
-                src: '\n//# sourceMappingURL=' + (this.sourceMapsFile || rootFile + '.map') + '\n'
-            });
-        }
+        // if (this.sourceMaps) {
+        //     out.push({
+        //         path: '',
+        //         type: 'sourcemaps',
+        //         src: '\n//# sourceMappingURL=' + (this.sourceMapsFile || rootFile + '.map') + '\n'
+        //     });
+        // }
+
+        // console.log('OUT', out);
 
         return out;
     };
@@ -178,6 +189,7 @@ module.exports = (function() {
         }
 
         var module = '';
+
         var name = resolved.name;
         if (resolved.alias) {
             module += 'require.alias[\'' + resolved.name + '\'] = \'' + resolved.alias + '\';\n';
@@ -198,8 +210,26 @@ module.exports = (function() {
         }
 
         var source = this.readFile(resolved.path);
-        module += (/\.json$/.test(resolved.path) ? 'module.exports = ' : '') + source;
+
+        module += (/\.json$/.test(resolved.path) ? 'module.exports = ' : '');
+        module += source;
         module += '\n});\n';
+
+        if (this.sourceMaps) {
+            var chunks = source.split('\n');
+            chunks.forEach(function(line, index) {
+                line += '\n';
+                this.sourceNode.add(new SourceNode(index + 1, 0, path.basename(resolved.path), line));
+            }, this);
+
+            this.sourceNode.setSourceContent(path.basename(resolved.path), source || '//no content added yet!');
+
+            // this.sourceMapGenerator.addMapping({
+            //   source: name,
+            //   original: { line: fileStart, column: 0 },
+            //   generated: { line: 3, column: 456 }
+            // })
+        }
 
         var out = [{
             path: name,
