@@ -238,15 +238,15 @@ module.exports = (function() {
 
         this.modules.push(resolved.path);
 
-        if (resolved.isModule) {
             out = out.concat(this.grepSubmodules(resolved, source));
+        if (resolved.isModule) {
         }
 
         return out;
     };
 
     Superjoin.prototype.grepSubmodules = function(module, source) {
-        // console.log('GREP', module);
+        console.log('GREP', module);
         var pattern = /require\((.+?)\)/g,
             out = [];
 
