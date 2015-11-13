@@ -17,6 +17,7 @@ module.exports = (function() {
         this.root = conf.root || this.workingDir || process.cwd();
         this.modules = [];
         this.confFiles = [];
+        this.skipSubmodules = conf.skipSubmodules || false;
 
         this.libDir = conf.libDir || null;
         this.bwrDir = conf.bwrDir || null;
@@ -223,12 +224,6 @@ module.exports = (function() {
             }, this);
 
             this.sourceNode.setSourceContent(path.basename(resolved.path), source || '//no content added yet!');
-
-            // this.sourceMapGenerator.addMapping({
-            //   source: name,
-            //   original: { line: fileStart, column: 0 },
-            //   generated: { line: 3, column: 456 }
-            // })
         }
 
         var out = [{
@@ -238,15 +233,15 @@ module.exports = (function() {
 
         this.modules.push(resolved.path);
 
+        if (resolved.isModule || !this.skipSubmodules) {
             out = out.concat(this.grepSubmodules(resolved, source));
-        if (resolved.isModule) {
         }
 
         return out;
     };
 
     Superjoin.prototype.grepSubmodules = function(module, source) {
-        console.log('GREP', module);
+        // console.log('GREP', module);
         var pattern = /require\((.+?)\)/g,
             out = [];
 
