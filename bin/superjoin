@@ -16,11 +16,17 @@ program.version(pkg.version)
     .option('-a, --autoload', 'Enable autoloading of scripts that hadn\'t been added to the bundle file')
     .option('-b, --banner <banner>', 'Adds <banner> at the beginning of the bundle')
     .option('-r, --root <path>', 'Sets a root path')
+    .option('-s, --superjoin-file', 'Use file as superjoin file')
     .option('-w, --watch', 'Watch .js files for changes and rebuilds the bundle')
     .option('-v, --verbose', 'Enable console logging')
     .parse(process.argv);
 
 var superjoin = new Superjoin();
+
+if (program.superjoin) {
+    superjoin.confFiles = [program.superjoin];
+}
+
 superjoin.verbose = program.verbose;
 var conf = superjoin.getConf(),
     files;

@@ -4,13 +4,14 @@
   "description": "Module builder for the web",
   "main": "superjoin.js",
   "dependencies": {
-    "commander": "^2.6.0",
-    "grunt": "^0.4.5"
+    "commander": "^2.9.0",
+    "grunt": "^0.4.5",
+    "source-map": "^0.5.3"
   },
   "devDependencies": {
     "grunt-bumpup": "^0.6.2",
-    "grunt-contrib-jshint": "^0.11.0",
-    "grunt-release": "^0.11.0",
+    "grunt-contrib-jshint": "^0.11.3",
+    "grunt-release": "^0.13.0",
     "node-watch": "^0.3.4"
   },
   "scripts": {
