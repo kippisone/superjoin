@@ -16,6 +16,7 @@ module.exports = (function() {
         this.workingDir = conf.workingDir || process.cwd();
         this.root = conf.root || this.workingDir || process.cwd();
         this.umd = conf.umd || false;
+        this.umdDependencies = conf.umdDependencies || false;
         this.modules = [];
         this.confFiles = [];
         this.skipSubmodules = conf.skipSubmodules || false;
@@ -117,10 +118,16 @@ module.exports = (function() {
         }
 
         if (this.umd) {
+            let deps = this.getUmdDependencies();
             grunt.log.ok('Create UMD module with name %s', this.umd);
             this.umdSourceFile = this.readFile(path.join(__dirname, 'public/umd.js'));
-            this.umdSourceFile = this.umdSourceFile.replace(/\$SUPREJOIN_MODULE_NAME/g, this.umd);
-            this.umdSourceFile = this.umdSourceFile.split('/* SUPERJOIN-UMD-MODULES */');
+            this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_MODULE_NAME\*\*\//g, this.umd);
+            this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_AMD_DEPS\*\*\//g, deps.amd);
+            this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_CJS_DEPS\*\*\//g, deps.cjs);
+            this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_WIN_DEPS\*\*\//g, deps.win);
+            this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPERJOIN_DEPENDENCIES\*\*\//g, deps.deps);
+            this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPERJOIN_MAIN_PATH\*\*\//g, main);
+            this.umdSourceFile = this.umdSourceFile.split('/**SUPERJOIN-UMD-MODULES**/');
             out.push({
                 path: '',
                 type: 'require',
@@ -192,7 +199,7 @@ module.exports = (function() {
         return this.rcalls.push({
             path: '',
             type: 'init-call',
-            src: 'require(\'' + name + '\');\n'
+            src: 'return require(\'' + name + '\');\n'
         });
     };
 
@@ -563,6 +570,34 @@ module.exports = (function() {
         }
 
         return {};
+    };
+
+    Superjoin.prototype.getUmdDependencies = function() {
+        var deps = {
+            amd: [],
+            cjs: [],
+            win: [],
+            deps: []
+        };
+
+        if (this.umdDependencies) {
+            for (var key in this.umdDependencies) {
+                if (this.umdDependencies.hasOwnProperty(key)) {
+                    let prop = this.umdDependencies[key];
+                    deps.amd.push('\'' + prop[0] + '\'');
+                    deps.cjs.push('require(\'' + prop[1] + '\')');
+                    deps.win.push('window.' + prop[2]);
+                    deps.deps.push('\'' + key + '\'');
+                }
+            }
+        }
+
+        deps.amd = deps.amd.join(', ');
+        deps.cjs = deps.cjs.join(', ');
+        deps.win = deps.win.join(', ');
+        deps.deps = deps.deps.join(', ');
+
+        return deps;
     };
 
     return Superjoin;

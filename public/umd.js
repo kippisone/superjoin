@@ -3,28 +3,37 @@
     'use strict';
 
     if (typeof define === 'function' && define.amd) {
-        define('$SUPREJOIN_MODULE_NAME', [], factory);
+        define('/**SUPREJOIN_MODULE_NAME**/', [/**SUPREJOIN_AMD_DEPS**/], factory);
     } else if (typeof module !== 'undefined' && module.exports) {
-        module.exports = factory();
+        module.exports = factory(/**SUPREJOIN_CJS_DEPS**/);
     } else {
-        root.XQCore = factory();
+        root.XQCore = factory(/**SUPREJOIN_WIN_DEPS**/);
     }
 }(this, function () {
     'use strict';
+
+    var deps = [/**SUPERJOIN_DEPENDENCIES**/],
+        args = Array.prototype.slice.call(arguments);
     
+    var lastCache;
     var require = function(file) {
+
+        if (deps.indexOf(file) !== -1) {
+            return args[deps.indexOf(file)];
+        }
 
         if (require.alias && require.alias[file]) {
             file = require.alias[file];
         }
+
+        file = require.resolve(file, this ? this.file : null);
 
         var module = {
             exports: {},
             file: file
         };
 
-        file = require.resolve(file, this ? this.file : null);
-
+        lastCache = require.cache;
         if (require.cache[file]) {
             
             if (require.cache[file].obj) {
@@ -32,7 +41,7 @@
             }
 
             require.cache[file].fn(module, module.exports, require.bind(module));
-            require.cache[file].obj = module.exports;
+            require.cache[file].obj = module.exports || {};
             return require.cache[file].obj;
         }
         else {
@@ -41,9 +50,11 @@
     };
 
     require.resolve = function(path, parent) {
+        parent = parent || '';
+
         var resolved = [];
         if (path.charAt(0) === '.') {
-            var newPath = parent || location.pathname;
+            var newPath = parent;
             newPath = newPath.split('/');
             newPath.pop();
             newPath = newPath.concat(path.split('/'));
@@ -92,5 +103,5 @@
     require.cache = {};
     require.alias = {};
 
-/* SUPERJOIN-UMD-MODULES */
+/**SUPERJOIN-UMD-MODULES**/
 }));
