@@ -16,6 +16,7 @@ program.version(pkg.version)
     .option('-a, --autoload', 'Enable autoloading of scripts that hadn\'t been added to the bundle file')
     .option('-b, --banner <banner>', 'Adds <banner> at the beginning of the bundle')
     .option('-r, --root <path>', 'Sets a root path')
+    .option('-u, --umd <name>', 'Create a bundle and return its as an umd module. Using <name> as module name')
     .option('-s, --superjoin-file', 'Use file as superjoin file')
     .option('-w, --watch', 'Watch .js files for changes and rebuilds the bundle')
     .option('-v, --verbose', 'Enable console logging')
@@ -28,6 +29,7 @@ if (program.superjoin) {
 }
 
 superjoin.verbose = program.verbose;
+superjoin.umd = program.umd || false;
 var conf = superjoin.getConf(),
     files;
 

@@ -15,6 +15,7 @@ module.exports = (function() {
 
         this.workingDir = conf.workingDir || process.cwd();
         this.root = conf.root || this.workingDir || process.cwd();
+        this.umd = conf.umd || false;
         this.modules = [];
         this.confFiles = [];
         this.skipSubmodules = conf.skipSubmodules || false;
@@ -115,7 +116,18 @@ module.exports = (function() {
             });
         }
 
-        if (!this.noRequire && this.headerAdded === false) {
+        if (this.umd) {
+            grunt.log.ok('Create UMD module with name %s', this.umd);
+            this.umdSourceFile = this.readFile(path.join(__dirname, 'public/umd.js'));
+            this.umdSourceFile = this.umdSourceFile.replace(/\$SUPREJOIN_MODULE_NAME/g, this.umd);
+            this.umdSourceFile = this.umdSourceFile.split('/* SUPERJOIN-UMD-MODULES */');
+            out.push({
+                path: '',
+                type: 'require',
+                src: this.umdSourceFile[0]
+            });
+        }
+        else if (!this.noRequire && this.headerAdded === false) {
             out.push({
                 path: '',
                 type: 'require',
@@ -164,6 +176,14 @@ module.exports = (function() {
         // }
 
         // console.log('OUT', out);
+
+        if (this.umd) {
+            out.push({
+                path: '',
+                type: 'require',
+                src: this.umdSourceFile[1]
+            });
+        }
 
         return out;
     };
