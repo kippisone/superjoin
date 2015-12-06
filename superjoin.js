@@ -199,7 +199,7 @@ module.exports = (function() {
         return this.rcalls.push({
             path: '',
             type: 'init-call',
-            src: 'return require(\'' + name + '\');\n'
+            src: (this.umd ? 'return ' : '') + 'require(\'' + name + '\');\n'
         });
     };
 
