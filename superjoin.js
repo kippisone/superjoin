@@ -70,6 +70,7 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.add = function(file) {
+        console.log('ADD', file);
         this.files.push(file);
     };
 
@@ -355,7 +356,7 @@ module.exports = (function() {
                 filepath = path.join(nodeModule, filename);
                 filename = name + filepath.replace(dir, '');
             }
-            else if (pkg && pkg.browser) {
+            else if (pkg && pkg.browser && typeof pkg.browser === 'string') {
                 filename = pkg.browser;
                 filepath = path.join(nodeModule, filename);
                 filename = name + filepath.replace(dir, '');
@@ -388,7 +389,7 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.resolve = function(from, to) {
-        // console.log('Resolve: "%s" "%s"', from, to);
+        console.log('Resolve: "%s" "%s"', from, to);
 
         var fromDir = path.dirname(from);
         var resolved;
@@ -507,12 +508,12 @@ module.exports = (function() {
             resolved = resolveModule(to);
         }
 
-        /*console.log('RESOLVED:', {
+        console.log('RESOLVED:', {
             path: resolved.path,
             name: resolved.name,
             dir: resolved.dir,
             isModule: resolved.isModule
-        });*/
+        });
         
 
         //Do we need an alias?
