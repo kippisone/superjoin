@@ -49,6 +49,10 @@ if (program.root) {
     superjoin.root = path.resolve(process.cwd(), program.root);
 }
 
+if (conf.libDir) {
+    superjoin.libDir = path.join(superjoin.root || process.cwd(), conf.libDir);
+}
+
 var outFile = program.outfile || conf.outfile;
 var out = superjoin.join(files, conf.main);
 

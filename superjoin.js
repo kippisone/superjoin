@@ -21,7 +21,7 @@ module.exports = (function() {
         this.confFiles = [];
         this.skipSubmodules = conf.skipSubmodules || false;
 
-        this.libDir = conf.libDir || null;
+        this.libDir = conf.libDir ? path.join(this.root, conf.libDir) : null;
         this.bwrDir = conf.bwrDir || null;
         this.npmDir = conf.npmDir || null;
 
@@ -70,7 +70,7 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.add = function(file) {
-        console.log('ADD', file);
+        // console.log('ADD', file);
         this.files.push(file);
     };
 
@@ -439,7 +439,7 @@ module.exports = (function() {
         var resolveModule = function(file) {
             var resolved;
 
-            // console.log('RESMOD', file);
+            console.log('RESMOD', file, this.libDir);
 
             if (this.libDir) {
                 resolved = this.loadModule('lib', file);
@@ -454,7 +454,7 @@ module.exports = (function() {
             }
 
 
-            // console.log('MOD RESOLVED', resolved);
+            console.log('MOD RESOLVED', resolved);
             return resolved;
         }.bind(this);
 
