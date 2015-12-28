@@ -4,8 +4,10 @@
   "description": "Module builder for the web",
   "main": "superjoin.js",
   "dependencies": {
+    "co-utils": "^0.1.1",
     "commander": "^2.9.0",
     "grunt": "^0.4.5",
+    "logtopus": "0.0.0",
     "source-map": "^0.5.3"
   },
   "devDependencies": {

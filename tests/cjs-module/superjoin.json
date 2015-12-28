@@ -1,0 +1,8 @@
+{
+    "name": "cjs",
+    "main": "index.js",
+    "npmDir": "../npm_modules/",
+    "files": [
+        "./libs/lib1.js"
+    ]
+}

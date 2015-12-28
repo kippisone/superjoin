@@ -1,4 +1,4 @@
-describe('Superjoin', function() {
+describe.skip('Superjoin', function() {
     'use strict';
 
     var path = require('path'),

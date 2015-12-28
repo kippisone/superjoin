@@ -2,13 +2,10 @@
     "project": "superjoin",
     "files": [
         "modules/*.js",
-        "public/*.js",
         "superjoin.js"
     ],
-    "watch": [
-        "modules/*.js",
-        "public/require.js",
-        "superjoin.js"
-    ],
-    "tests": "tests/*.spec.js"
+    "tests": [
+        "tests/*.spec.js",
+        "tests/*Test.js"
+    ]
 }
