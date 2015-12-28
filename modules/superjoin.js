@@ -137,7 +137,6 @@ class Superjoin extends TaskRunner {
             if (this.main) {
                 let main = this.resolve(rootFile, this.main);
                 this.addModule(rootFile, main.name);
-                this.addRequireCall(main.name);
             }
 
             resolve();
@@ -157,8 +156,8 @@ class Superjoin extends TaskRunner {
             if (this.umd) {
                 let deps = this.getUmdDependencies();
                 log.debug('Create UMD module with name:', this.umd);
-                this.umdSourceFile = this.readFile(path.join(__dirname, 'public/umd.js'));
-                this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_MODULE_NAME\*\*\//g, this.umd);
+                this.umdSourceFile = this.loadFile(path.join(__dirname, '../public/umd.js'));
+                this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_MODULE_NAME\*\*\//g, this.umd === true ? this.name : this.umd);
                 this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_AMD_DEPS\*\*\//g, deps.amd);
                 this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_CJS_DEPS\*\*\//g, deps.cjs);
                 this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_WIN_DEPS\*\*\//g, deps.win);
@@ -182,6 +181,16 @@ class Superjoin extends TaskRunner {
 
             if (this.rcalls.length) {
                 bundle += this.rcalls.join('\n');
+            }
+
+            if (this.main) {
+                if (this.umd) {
+                    bundle += 'return require(\'' + this.main + '\');';
+                    bundle += this.umdSourceFile[1];
+                }
+                else {
+                    bundle += 'require(\'' + this.main + '\');\n';
+                }
             }
 
             this.bundle = bundle;
@@ -353,7 +362,7 @@ class Superjoin extends TaskRunner {
                 //Try to resolve as local module
                 resolved = this.resolve(from, './' + file);
                 if (resolved) {
-                    log.warn('Module ' + file + ' not found as module, but could resolve it as local module. It\'s better to require this module as a local module.!');
+                    log.warn('Module ' + file + ' not found as module, but could resolve it as local module. It\'s better to require this module as a local module!');
                 }
             }
 
@@ -593,8 +602,42 @@ class Superjoin extends TaskRunner {
             }
 
             subModule = subModule.slice(1, -1);
+
+            if (this.umd && this.umdDependencies && Object.keys(this.umdDependencies).indexOf(subModule) !== -1) {
+                log.debug('Module is an UMD dependency!', subModule);
+                continue;
+            }
+
             this.addModule(module.path, subModule);
         }
+    }
+
+    getUmdDependencies() {
+        var deps = {
+            amd: [],
+            cjs: [],
+            win: [],
+            deps: []
+        };
+
+        if (this.umdDependencies) {
+            for (var key in this.umdDependencies) {
+                if (this.umdDependencies.hasOwnProperty(key)) {
+                    let prop = this.umdDependencies[key];
+                    deps.amd.push('\'' + prop[0] + '\'');
+                    deps.cjs.push('require(\'' + prop[1] + '\')');
+                    deps.win.push('window.' + prop[2]);
+                    deps.deps.push('\'' + key + '\'');
+                }
+            }
+        }
+
+        deps.amd = deps.amd.join(', ');
+        deps.cjs = deps.cjs.join(', ');
+        deps.win = deps.win.join(', ');
+        deps.deps = deps.deps.join(', ');
+
+        return deps;
     }
 }
 
