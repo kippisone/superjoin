@@ -31,7 +31,7 @@ describe('Superjoin', function() {
 
             };
 
-            superjoin.configure(conf).then(function(conf) {
+            superjoin.configureTask(conf).then(function(conf) {
                 test(superjoin).toHaveProps({
                     root: process.cwd(),
                     umd: false,
@@ -57,7 +57,7 @@ describe('Superjoin', function() {
                 workingDir: path.join(__dirname, 'fixtures')
             };
 
-            superjoin.configure(conf).then(function(conf) {
+            superjoin.configureTask(conf).then(function(conf) {
                 test(superjoin).toHaveProps({
                     root: path.join(__dirname, 'fixtures', 'public/'),
                     umd: false,
@@ -94,7 +94,7 @@ describe('Superjoin', function() {
                 workingDir: '/foo/bar'
             };
 
-            superjoin.configure(initConf).then(function(conf) {
+            superjoin.configureTask(initConf).then(function(conf) {
                  test(superjoin).toHaveProps({
                     root: path.join(initConf.workingDir, 'foo/bar'),
                     umd: true,

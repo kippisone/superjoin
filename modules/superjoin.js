@@ -3,7 +3,6 @@
 var path = require('path');
 
 var TaskRunner = require('co-tasks');
-var co = require('co-utils');
 var fl = require('node-fl');
 var log = require('logtopus');
 
@@ -20,13 +19,13 @@ class Superjoin extends TaskRunner {
         this.rcalls = [];
 
         this.defineTasks(['init', 'configure', 'collect', 'build', 'write', 'clean']);
-        this.registerTask('configure', this.configure.bind(this, conf));
-        this.registerTask('collect', this.collect.bind(this, conf));
-        this.registerTask('build', this.build.bind(this));
-        this.registerTask('write', this.write.bind(this));
+        this.registerTask('configure', this.configureTask.bind(this, conf));
+        this.registerTask('collect', this.collectTask.bind(this, conf));
+        this.registerTask('build', this.buildTask.bind(this));
+        this.registerTask('write', this.writeTask.bind(this));
     }
 
-    configure(conf) {
+    configureTask(conf) {
         var promise = new Promise(function(resolve, reject) {
             this.workingDir = conf.workingDir || process.cwd();
 
@@ -45,6 +44,7 @@ class Superjoin extends TaskRunner {
             this.umdDependencies = conf.umdDependencies || sjConf.umdDependencies || false;
             this.skipSubmodules = conf.skipSubmodules || sjConf.skipSubmodules || false;
             this.scriptFile = conf.scriptFile || sjConf.scriptFile || null;
+            this.dev = conf.dev || sjConf.dev || null;
 
             if (this.root && this.root.charAt(0) !== '/') {
                 this.root = path.join(this.workingDir, this.root);
@@ -115,7 +115,7 @@ class Superjoin extends TaskRunner {
         return promise;
     }
 
-    collect(conf) {
+    collectTask(conf) {
         var promise = new Promise(function(resolve, reject) {
 
             if (this.root.charAt(0) !== '/') {
@@ -145,7 +145,7 @@ class Superjoin extends TaskRunner {
         return promise;
     }
 
-    build(args) {
+    buildTask(args) {
         var promise = new Promise(function(resolve, reject) {
             var bundle = '';
 
@@ -175,7 +175,7 @@ class Superjoin extends TaskRunner {
                 bundle += script.source;
             }
 
-            if (this.autoload) {
+            if (this.dev) {
                 bundle += '//Enable autoloading\nwindow.require.autoload = true;\n\n';
             }
 
@@ -201,7 +201,7 @@ class Superjoin extends TaskRunner {
         return promise;
     }
 
-    write() {
+    writeTask() {
         var promise = new Promise(function(resolve, reject) {
             if (this.scriptFile) {
                 fl.write(this.scriptFile, this.bundle);
@@ -214,7 +214,7 @@ class Superjoin extends TaskRunner {
     }
 
     /**
-     * Add files to superjoin
+     * Adds a file to superjoin
      * @param {String|Object} file Filename or a FileObject
      */
     add(file) {
@@ -252,8 +252,9 @@ class Superjoin extends TaskRunner {
         if (this.modules.indexOf(resolved.path) !== -1) {
             if (this.verbose) {
                 log.debug('Module already added!', resolved.name);
-                return '';
             }            
+  
+            return '';
         }
 
         module += 'require.register(\'' + name + '\', function(module, exports, require) {\n';
@@ -359,6 +360,7 @@ class Superjoin extends TaskRunner {
             }
 
             if (!resolved) {
+                log.debug('Resolve as local module:', file, resolved);
                 //Try to resolve as local module
                 resolved = this.resolve(from, './' + file);
                 if (resolved) {
@@ -521,11 +523,13 @@ class Superjoin extends TaskRunner {
         };
     }
 
-    join() {
-
-    }
-
-    map() {
+    /**
+     * Starts the bundler
+     *
+     * @method build
+     * @return {Object} Returns this value
+     */
+    build() {
         return this.run();
     }
 
@@ -638,6 +642,15 @@ class Superjoin extends TaskRunner {
         deps.deps = deps.deps.join(', ');
 
         return deps;
+    }
+
+    /**
+     * Clears the file cache
+     *
+     * @method clearCache
+     */
+    clearCache() {
+        this.fileCache = {};
     }
 }
 

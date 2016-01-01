@@ -5,15 +5,16 @@ var program = require('commander'),
     pkg = require('../package.json'),
     path = require('path');
 
-var grunt = require('grunt'),
-    watch = require('node-watch');
+var watch = require('node-watch');
+var log = require('logtopus');
+log.setLevel('sys');
 
-var Superjoin = require('../superjoin');
+var Superjoin = require('../modules/superjoin');
 
 program.version(pkg.version)
     .usage('[options] <files ...>')
     .option('-o, --outfile <outfile>', 'Write joined file to <outfile>. If this option is not present write to STDOUT')
-    .option('-a, --autoload', 'Enable autoloading of scripts that hadn\'t been added to the bundle file')
+    .option('-d, --dev', 'Enables autoloading of scripts using XHR that hadn\'t been added to the bundle file')
     .option('-b, --banner <banner>', 'Adds <banner> at the beginning of the bundle')
     .option('-r, --root <path>', 'Sets a root path')
     .option('-u, --umd <name>', 'Create a bundle and return its as an umd module. Using <name> as module name')
@@ -22,47 +23,31 @@ program.version(pkg.version)
     .option('-v, --verbose', 'Enable console logging')
     .parse(process.argv);
 
-var superjoin = new Superjoin();
+var conf = {
+    verbose: program.verbose,
+    umd: program.umd || false,
+    autoload: program.autoload,
+    libDir: program.libDir,
+    scriptFile: program.outfile,
+    root: program.root
+};
 
 if (program.superjoin) {
-    superjoin.confFiles = [program.superjoin];
+    conf.confFiles = [program.superjoinFile];
 }
 
-superjoin.verbose = program.verbose;
-superjoin.umd = program.umd || false;
-var conf = superjoin.getConf(),
-    files;
 
-superjoin.autoload = program.autoload;
-    
-if (program.args.length) {
-    files = program.args;
-}
-else {
-    files = conf.files || [];
-    if (conf.root) {
-        superjoin.root = path.resolve(process.cwd(), conf.root);
-    }
+var superjoin = new Superjoin(conf);
+
+if (program.args) {
+    superjoin.scripts = program.args;
 }
 
-if (program.root) {
-    superjoin.root = path.resolve(process.cwd(), program.root);
-}
-
-if (conf.libDir) {
-    superjoin.libDir = path.join(superjoin.root || process.cwd(), conf.libDir);
-}
-
-var outFile = program.outfile || conf.outfile;
-var out = superjoin.join(files, conf.main);
 
 var run = function() {
-    
-    if (outFile) {
-        grunt.file.write(outFile, out);
-    }
-    else {
-        process.stdout.write(out + '\n');
+    superjoin.map();
+    if (!program.outfile) {
+        process.stdout.write(superjoin.bundle);
     }
 };
 
@@ -78,13 +63,14 @@ if (program.watch) {
         followSymlinks: true
     };
 
-    var ignore = new RegExp(outFile + '$');
+    var ignore = new RegExp(program.outfile + '$');
     watch(superjoin.root, watchOpts, function(file) {
+        superjoin.clearCache();
         if (ignore.test(file)) {
             return;
         }
 
-        console.log('File changed:', outFile, file);
+        log.sys('File changed:', program.outfile, file);
         run();
     });
 }
