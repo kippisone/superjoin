@@ -1,16 +1,37 @@
 Superjoin
 =========
 
-Superjoin is a **module loader** for the web. It brings node like **require** support to the **front-end**.
-Superjoin uses npm as package storage and gives you the posibility to use your own local packages.
-<br><br>
+Superjoin is a **module loader** for the web. It brings Node.js like **require** support to the **front-end**.
+It uses npm or bower as package storage and gives you the possibility to use your own local packages.
+
+Installation
+------------
+
+Superjoin is available on [NPM](https://npmjs.org) the packagemanager for [Node.js](https://nodejs.org)
+
+The command to install it global:
+
+```shell
+npm install -g superjoin
+```
+
+If you prefer a local installation then remove the `-g` flag from install command.
+
+Requirements
+------------
+
+Node.js >= 4.2.0
+
 
 Usage of Superjoin:
 -------------------
 
-**Configure your requirements**
+Superjoin can be configured with a `superjoin.json` file placed everywhere in your project.
+A minimum configuration looks like:
+
 ```json
 {
+    "name": "myproject",
     "main": "index.js",
     "files": [
         "hello.js"
@@ -18,37 +39,59 @@ Usage of Superjoin:
 }
 ```
 
-**Run the build job**
+Superjoin parse all modules an includes submodules automatically. You mustn't add all your requirements in the superjoin file. 
+
+
+Run the build job
+-----------------
+
 ```shell
-superjoin -o build.js
+$ superjoin -o build.js
 ```
 
-**Include the build file**
+Run this command from the same folder where your superjoin.json file is.
+That command will create a bundle with all modules and their requirements.
+
+Include the build file
+----------------------
+
+Place this simple html snippet in the head of your index.html
+
 ```html
-<script src="build.js"></script>
+<script type="text/javascript" src="build.js"></script>
 ```
 
-**Use it inside your code**
+Inside your code
+----------------
+
 ```js
 //Load local modules
 var myModule = require('./modules/myModule.js');
 
-//Load from node_modules
+//Load from node_modules or bower_components
 var $ = require('jquery');
 ```
 
-NOTES
------
+The difference of local and npm/bower modules is the leading `./` or `../`.
+If a module name starts with  `./` or `../` it will be loaded as a local file.
+All other modules are being processed as npm or bower modules.
 
-window.require
+The loading order of npm/bower modules is the following:
 
-FROM                REQUIRE                 RESOLVED
+1) Tries to load it from `bower_components`. If no bower_module folder is found, tries to load it from a bower_components folder in the parent directory, until the root directory.
 
-index.js            ./foo                   ./foo.js
-index.js            ./foo.js                ./foo.js
-foo/bar.js          ../blub.js              ./blub.js
+2) Tries to load it from `node_modules`. If no bower_module folder is found, tries to load it from a node_modules folder in the parent directory, until the root directory.
 
-index.js            mymodule                mymodule
-index.js            mymodule/test.js        mymodule/test.js
+3) Tries to resolve the path as a local module.
 
-mymodule/test.js    ./setup                 mymodule/setup.js
+4) Throws a module not found error.
+
+[Read the full documentation](https://superjoinjs.com/docs.html)
+
+
+Superjoin as a plugin
+---------------------
+
+Looking for plugins?
+
+[Superjoin plugin](grunt-task.html) for Grunt.

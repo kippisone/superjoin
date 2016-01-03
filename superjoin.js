@@ -15,11 +15,13 @@ module.exports = (function() {
 
         this.workingDir = conf.workingDir || process.cwd();
         this.root = conf.root || this.workingDir || process.cwd();
+        this.umd = conf.umd || false;
+        this.umdDependencies = conf.umdDependencies || false;
         this.modules = [];
         this.confFiles = [];
         this.skipSubmodules = conf.skipSubmodules || false;
 
-        this.libDir = conf.libDir || null;
+        this.libDir = conf.libDir ? path.join(this.root, conf.libDir) : null;
         this.bwrDir = conf.bwrDir || null;
         this.npmDir = conf.npmDir || null;
 
@@ -68,6 +70,7 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.add = function(file) {
+        // console.log('ADD', file);
         this.files.push(file);
     };
 
@@ -115,7 +118,24 @@ module.exports = (function() {
             });
         }
 
-        if (!this.noRequire && this.headerAdded === false) {
+        if (this.umd) {
+            let deps = this.getUmdDependencies();
+            grunt.log.ok('Create UMD module with name %s', this.umd);
+            this.umdSourceFile = this.readFile(path.join(__dirname, 'public/umd.js'));
+            this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_MODULE_NAME\*\*\//g, this.umd);
+            this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_AMD_DEPS\*\*\//g, deps.amd);
+            this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_CJS_DEPS\*\*\//g, deps.cjs);
+            this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_WIN_DEPS\*\*\//g, deps.win);
+            this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPERJOIN_DEPENDENCIES\*\*\//g, deps.deps);
+            this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPERJOIN_MAIN_PATH\*\*\//g, main);
+            this.umdSourceFile = this.umdSourceFile.split('/**SUPERJOIN-UMD-MODULES**/');
+            out.push({
+                path: '',
+                type: 'require',
+                src: this.umdSourceFile[0]
+            });
+        }
+        else if (!this.noRequire && this.headerAdded === false) {
             out.push({
                 path: '',
                 type: 'require',
@@ -165,6 +185,14 @@ module.exports = (function() {
 
         // console.log('OUT', out);
 
+        if (this.umd) {
+            out.push({
+                path: '',
+                type: 'require',
+                src: this.umdSourceFile[1]
+            });
+        }
+
         return out;
     };
 
@@ -172,7 +200,7 @@ module.exports = (function() {
         return this.rcalls.push({
             path: '',
             type: 'init-call',
-            src: 'require(\'' + name + '\');\n'
+            src: (this.umd ? 'return ' : '') + 'require(\'' + name + '\');\n'
         });
     };
 
@@ -328,7 +356,7 @@ module.exports = (function() {
                 filepath = path.join(nodeModule, filename);
                 filename = name + filepath.replace(dir, '');
             }
-            else if (pkg && pkg.browser) {
+            else if (pkg && pkg.browser && typeof pkg.browser === 'string') {
                 filename = pkg.browser;
                 filepath = path.join(nodeModule, filename);
                 filename = name + filepath.replace(dir, '');
@@ -361,7 +389,7 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.resolve = function(from, to) {
-        // console.log('Resolve: "%s" "%s"', from, to);
+        console.log('Resolve: "%s" "%s"', from, to);
 
         var fromDir = path.dirname(from);
         var resolved;
@@ -411,7 +439,7 @@ module.exports = (function() {
         var resolveModule = function(file) {
             var resolved;
 
-            // console.log('RESMOD', file);
+            console.log('RESMOD', file, this.libDir);
 
             if (this.libDir) {
                 resolved = this.loadModule('lib', file);
@@ -426,7 +454,7 @@ module.exports = (function() {
             }
 
 
-            // console.log('MOD RESOLVED', resolved);
+            console.log('MOD RESOLVED', resolved);
             return resolved;
         }.bind(this);
 
@@ -480,12 +508,12 @@ module.exports = (function() {
             resolved = resolveModule(to);
         }
 
-        /*console.log('RESOLVED:', {
+        console.log('RESOLVED:', {
             path: resolved.path,
             name: resolved.name,
             dir: resolved.dir,
             isModule: resolved.isModule
-        });*/
+        });
         
 
         //Do we need an alias?
@@ -543,6 +571,34 @@ module.exports = (function() {
         }
 
         return {};
+    };
+
+    Superjoin.prototype.getUmdDependencies = function() {
+        var deps = {
+            amd: [],
+            cjs: [],
+            win: [],
+            deps: []
+        };
+
+        if (this.umdDependencies) {
+            for (var key in this.umdDependencies) {
+                if (this.umdDependencies.hasOwnProperty(key)) {
+                    let prop = this.umdDependencies[key];
+                    deps.amd.push('\'' + prop[0] + '\'');
+                    deps.cjs.push('require(\'' + prop[1] + '\')');
+                    deps.win.push('window.' + prop[2]);
+                    deps.deps.push('\'' + key + '\'');
+                }
+            }
+        }
+
+        deps.amd = deps.amd.join(', ');
+        deps.cjs = deps.cjs.join(', ');
+        deps.win = deps.win.join(', ');
+        deps.deps = deps.deps.join(', ');
+
+        return deps;
     };
 
     return Superjoin;

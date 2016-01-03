@@ -1,0 +1,14 @@
+{
+    "name": "cjs-umd",
+    "umd": true,
+    "umdDependencies": {
+        "firetpl": ["firetpl", "firetpl", "FireTPL"],
+        "xqcore": ["xqcore", "xqcore", "XQCore"],
+        "jquery": ["jquery", "jquery", "jQuery"]
+    },
+    "main": "index.js",
+    "npmDir": "../npm_modules/",
+    "files": [
+        "./libs/lib1.js"
+    ]
+}
