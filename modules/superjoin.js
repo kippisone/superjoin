@@ -1,3 +1,8 @@
+/**
+ * Superjoin module
+ *
+ * @module Superjoin
+ */
 'use strict';
 
 var path = require('path');
@@ -6,12 +11,21 @@ var TaskRunner = require('co-tasks');
 var fl = require('node-fl');
 var log = require('logtopus');
 
-log.setLevel('debug');
+log.setLevel('warn');
 
+/**
+ * Superjoin class
+ *
+ * @constructor
+ */
 class Superjoin extends TaskRunner {
     constructor(conf) {
         super();
         conf = conf || {};
+
+        if (conf.verbose) {
+            log.setLevel('debug');
+        }
 
         this.fileCache = {};
         this.scripts = [];
@@ -65,7 +79,6 @@ class Superjoin extends TaskRunner {
             }
             else {
                 let dir = path.join(this.workingDir, 'bower_components');
-                /*eslint no-constant-condition: 0*/
                 while (true) {
                     if (fl.exists(dir)) {
                         this.bwrDir = dir;
@@ -85,7 +98,6 @@ class Superjoin extends TaskRunner {
             }
             else {
                 let dir = path.join(this.workingDir, 'node_modules');
-                /*eslint no-constant-condition: 0*/
                 while (true) {
                     if (fl.exists(dir)) {
                         this.npmDir = dir;
@@ -223,8 +235,9 @@ class Superjoin extends TaskRunner {
 
     /**
      * Add a module
-     * @param {[type]} parent [description]
-     * @param {[type]} file   [description]
+     * 
+     * @param {string} parent Path of parent file
+     * @param {string} file   Filename or resolve object of loading module
      */
     addModule(parent, file) {
         log.debug('Add script module', parent, file);
@@ -524,16 +537,6 @@ class Superjoin extends TaskRunner {
     }
 
     /**
-     * Starts the bundler
-     *
-     * @method build
-     * @return {Object} Returns this value
-     */
-    build() {
-        return this.run();
-    }
-
-    /**
      * Load a file content, read from cache if it is cached, otherwise reads file from disk and add file to file cache
      * @param  {String} filename File path
      * @return {String}          Returns file content
@@ -645,6 +648,17 @@ class Superjoin extends TaskRunner {
     }
 
     /**
+     * Starts the bundler
+     * 
+     * @method build
+     * 
+     * @returns {Object} Returns this value
+     */
+    build() {
+        return this.run();
+    }
+
+    /**
      * Clears the file cache
      *
      * @method clearCache
@@ -652,6 +666,8 @@ class Superjoin extends TaskRunner {
     clearCache() {
         this.fileCache = {};
     }
+
+    //--
 }
 
 module.exports = Superjoin;

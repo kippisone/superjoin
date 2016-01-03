@@ -1,303 +1,182 @@
-describe.skip('Superjoin', function() {
-    'use strict';
+'use strict';
 
-    var path = require('path'),
-        fs = require('fs');
+var path = require('path');
 
-    var grunt = require('grunt');
+var Superjoin = require('../modules/superjoin');
+var CoTasks = require('co-tasks');
+var xpect = require('coffeebreak-expection');
+var fl = require('node-fl');
 
-    var Superjoin = require('../superjoin'),
-        testPaths = [
-        { from: '/srv/supertest/index.js', to: './foo.js', res: './foo.js' },
-        { from: '/srv/supertest/index.js', to: './foo', res: './foo.js' },
-        { from: '/srv/supertest/index.js', to: 'foo.js', res : './foo.js' },
-        { from: '/srv/supertest/foo/bar.js', to: '../foo.js', res : './foo.js' },
-        { from: '/srv/supertest/index.js', to: 'mymodule', res: 'mymodule', isNpm: true },
-        { from: '/srv/supertest/index.js', to: 'mymodule.js', res: 'mymodule.js', isNpm: true, noFile:true },
-        { from: '/srv/supertest/node_modules/mymodule/dist/index.js', to: '../mymodule.js', res: 'mymodule/mymodule.js', isNpm: true, noFile:true },
-        { from: '/srv/supertest/node_modules/mymodule/dist/index.js', to: 'mymodule/dist/foo.js', res: 'mymodule/dist/foo.js', isNpm: true, noFile:true },
-        { from: '/srv/supertest/index.js', to: '$npm/mymodule', res : 'mymodule', isNpm: true },
-        { from: '/srv/supertest/index.js', to: '$npm/mymodule/foo.js', res : 'mymodule/foo.js', isNpm: true },
-        { from: '/srv/supertest/index.js', to: '$bower/mymodule', res : 'mymodule', isBower: true },
-        { from: '/srv/supertest/index.js', to: '$bower/mymodule/foo.js', res : 'mymodule/foo.js', isBower: true },
-        { from: '/srv/supertest/index.js', to: '$lib/mymodule', res : 'mymodule', isLib: true },
-        { from: '/srv/supertest/index.js', to: '$lib/mymodule/foo.js', res : 'mymodule/foo.js', isLib: true }
-    ];
-
-    describe('resolve', function() {
-        var superjoin;
-        beforeEach(function() {
-            superjoin = new Superjoin();
-            superjoin.root = '/srv/supertest';
+describe('Superjoin', function() {
+    
+    describe('Constructor', function() {
+        it('Should be a Superjoin class', function() {
+            expect(Superjoin).to.be.a('function');
         });
 
-        afterEach(function() {
-
+        it('Should be an instance of Superjoin', function() {
+            expect(new Superjoin()).to.be.a(Superjoin);
         });
 
-        testPaths.forEach(function(p) {
-            it('Should resolve a path from ' + p.from + ' to ' + p.to, function() {
-                var dir = path.join('/srv/supertest');
-                var loadModuleStub;
-                var hasStub;
-                    
-                superjoin.npmDir = null;
-                superjoin.bwrDir = null;
-                superjoin.libDir = null;
+        it('Should be extended byCoTasks', function() {
+            expect(new Superjoin()).to.be.a(CoTasks);
+        });
+    });
 
-                var isModule = false;
+    describe('configure', function() {
+        it('Should configure superjoin', function(done) {
+            var superjoin = new Superjoin();
 
-                // var mod = p.base.split('/');
-                // mod = mod[0];
+            var conf = {
 
-                if (p.isNpm) {
-                    hasStub = '/srv/supertest/node_modules';
-                    superjoin.npmDir = '/srv/supertest/node_modules';
-                    dir = superjoin.npmDir;
-                    isModule = true;
-                //     root = path.join('/srv/supertest', p.npmDir, p.to);
-                //     superjoin.modulePaths[mod] = root;
-                }
+            };
 
-                if (p.isBower) {
-                    hasStub = '/srv/supertest/bower_components';
-                    superjoin.bwrDir = '/srv/supertest/bower_components';
-                    dir = superjoin.bwrDir;
-                    isModule = true;
-                //     root = path.join('/srv/supertest', p.bwrDir, p.to);
-                //     superjoin.modulePaths[mod] = root;
-                }
-
-                if (p.isLib) {
-                    hasStub = '/srv/supertest/libs';
-                    superjoin.libDir = '/srv/supertest/libs';
-                    dir = superjoin.libDir;
-                    isModule = true;
-                //     root = path.join('/srv/supertest', p.libDir, p.to);
-                //     superjoin.modulePaths[mod] = root;
-                }
-
-                if (hasStub) {
-                    loadModuleStub = sinon.stub(superjoin, 'loadModule');
-                    loadModuleStub.returns({
-                        path: path.join(hasStub, p.to.replace(/^\$[a-z]+\//, '')),
-                        name: p.res,
-                        dir: dir,
-                        isModule: isModule
-                    });
-                }
-
-                var fileExistsStub;
-                    fileExistsStub = sinon.stub(grunt.file, 'exists');
-                    fileExistsStub.returns(!p.noFile);
-                
-                var alias;
-                
-                var resolved = superjoin.resolve(p.from, p.to);
-                expect(resolved).to.eql({
-                    path: path.join(dir, p.res),
-                    dir: dir,
-                    name: p.res,
-                    isModule: isModule,
-                    alias: alias
+            superjoin.configureTask(conf).then(function(conf) {
+                xpect(superjoin).toHaveProps({
+                    root: process.cwd(),
+                    umd: false,
+                    umdDependencies: false,
+                    skipSubmodules: false,
+                    confFiles: [
+                        process.cwd() + '/superjoin.json',
+                        process.cwd() + '/package.json'
+                    ],
+                    workingDir: process.cwd()
                 });
 
-                if (hasStub) {
-                    loadModuleStub.restore();
-                }
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
 
-                fileExistsStub.restore();
+        it('Should configure using a superjoin.json file', function(done) {
+            var superjoin = new Superjoin();
+
+            var conf = {
+                workingDir: path.join(__dirname, 'fixtures')
+            };
+
+            superjoin.configureTask(conf).then(function(conf) {
+                xpect(superjoin).toHaveProps({
+                    root: path.join(__dirname, 'fixtures', 'public/'),
+                    umd: false,
+                    umdDependencies: false,
+                    skipSubmodules: false,
+                    confFiles: [
+                        path.join(__dirname, 'fixtures') + '/superjoin.json',
+                        path.join(__dirname, 'fixtures') + '/package.json'
+                    ],
+                    workingDir: path.join(__dirname, 'fixtures'),
+                    files: [
+                        './modules/module1/index.js',
+                        'module2',
+                        'module3'
+                    ],
+                    name: 'superjoin'
+                });
+
+                done();
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Should override configuration options', function(done) {
+            var superjoin = new Superjoin();
+
+            var initConf = {
+                root: 'foo/bar',
+                umd: true,
+                umdDependencies: true,
+                skipSubmodules: true,
+                confFiles: ['/foo/bar.json'],
+                workingDir: '/foo/bar'
+            };
+
+            superjoin.configureTask(initConf).then(function(conf) {
+                 xpect(superjoin).toHaveProps({
+                    root: path.join(initConf.workingDir, 'foo/bar'),
+                    umd: true,
+                    umdDependencies: true,
+                    skipSubmodules: true,
+                    confFiles: ['/foo/bar.json'],
+                    workingDir: '/foo/bar'
+                });
+
+                done();
+            }).catch(function(err) {
+                done(err);
             });
         });
     });
 
-    describe('getConf', function() {
-        var superjoin;
-
-        it('Should read superjoin conf file', function() {
-            process.chdir(path.join(__dirname, './fixtures/'));
-            superjoin = new Superjoin();
-
-            expect(superjoin.getConf()).to.be.an('object');
-            expect(superjoin.getConf()).to.eql({
-                name: 'superjoin',
-                root: 'public/',
-                files: ['./modules/module1/index.js', 'module2', 'module3']
+    describe('collect', function() {
+        it('Should collect modules', function(done) {
+            var superjoin = new Superjoin({
+                workingDir: path.join(__dirname + '/fixtures')
             });
-        });
 
-        it('Should read superjoin conf from package.json', function() {
-            process.chdir(path.join(__dirname, './fixtures-pkg/'));
-            superjoin = new Superjoin();
+            // required tasks
+            superjoin.run(['configure', 'collect']).then(function(conf) {
+                xpect(superjoin).toHaveProps({
+                    root: path.join(__dirname, 'fixtures/public/'),
+                    umd: false,
+                    umdDependencies: false,
+                    skipSubmodules: false,
+                    confFiles: [
+                        path.join(__dirname, 'fixtures') + '/superjoin.json',
+                        path.join(__dirname, 'fixtures') + '/package.json'
+                    ],
+                    workingDir: path.join(__dirname, 'fixtures'),
+                    files: [
+                        './modules/module1/index.js',
+                        'module2',
+                        'module3'
+                    ],
+                    name: 'superjoin'
+                });
 
-            expect(superjoin.getConf()).to.be.an('object');
-            expect(superjoin.getConf()).to.eql({
-                name: 'superjoin-pkg',
-                root: './public/',
-                files: ['a.js','b.js']
-            });
-        });
+                expect(superjoin.scripts).to.eql([{
+                    path: './modules/module1/index.js',
+                    source: 'require.register(\'./modules/module1/index.js\', function(module, exports, require) {\nmodule.exports = function() {\n    \'use strict\';\n    \n};\n});\n',
+                    src: '/home/andi/Webprojects/superjoin/tests/fixtures/public/modules/module1/index.js'
+                }, {
+                  path: 'module2/index.js',
+                  source: 'require.alias[\'module2\'] = \'module2/index.js\';\nrequire.register(\'module2/index.js\', function(module, exports, require) {\nmodule.exports = function() {\n    \'use strict\';\n    return \'Module 2\';  \n};\n});\n',
+                  src: '/home/andi/Webprojects/superjoin/tests/fixtures/node_modules/module2/index.js'
+                }, {
+                  path: 'module3/browser.js',
+                  source: 'require.alias[\'module3\'] = \'module3/browser.js\';\nrequire.register(\'module3/browser.js\', function(module, exports, require) {\nmodule.exports = function() {\n    \'use strict\';\n    return \'Module 3 browser\';  \n};\n});\n',
+                  src: '/home/andi/Webprojects/superjoin/tests/fixtures/node_modules/module3/browser.js'
+                }]);
 
-        it('Should try to read superjoin conf', function() {
-            process.chdir(path.join(__dirname, '.'));
-            superjoin = new Superjoin();
-
-            expect(superjoin.getConf()).to.be.an('object');
-            expect(superjoin.getConf()).to.eql({
-               
+                done();
+            }).catch(function(err) {
+                done(err);
             });
         });
     });
 
-    describe('addModule', function() {
-        var superjoin,
-            resolveStub,
-            readFileStub;
-
-        beforeEach(function() {
-            superjoin = new Superjoin();
-            superjoin.root = '/srv/supertest';
-
-            resolveStub = sinon.stub(superjoin, 'resolve');
-            readFileStub = sinon.stub(superjoin, 'readFile');
-            readFileStub.returns('//Code');
-            
-        });
-
-        afterEach(function() {
-            readFileStub.restore();
-            resolveStub.restore();
-                
-        });
-
-        it('Should add a local module', function() {
-            resolveStub.returns({
-                path: '/srv/supertest/test/module.js',
-                name: './test/module.js',
-                dir: '/srv/supertest/',
-                isModule: false
+    describe('build', function() {
+        it('Should build a bundle', function(done) {
+            var superjoin = new Superjoin({
+                workingDir: path.join(__dirname + '/fixtures')
             });
 
-            var res = superjoin.addModule('/srv/supertest/index.js', './test/module');
-            expect(superjoin.modules).to.eql(['/srv/supertest/test/module.js']);
+            // required tasks
+            superjoin.run(['configure', 'collect', 'build']).then(function(conf) {
+                expect(superjoin.bundle).to.eql(
+                    fl.read(path.join(__dirname, '../public/require.js')) +
+                    'require.register(\'./modules/module1/index.js\', function(module, exports, require) {\nmodule.exports = function() {\n    \'use strict\';\n    \n};\n});\n' +
+                    'require.alias[\'module2\'] = \'module2/index.js\';\nrequire.register(\'module2/index.js\', function(module, exports, require) {\nmodule.exports = function() {\n    \'use strict\';\n    return \'Module 2\';  \n};\n});\n' +
+                    'require.alias[\'module3\'] = \'module3/browser.js\';\nrequire.register(\'module3/browser.js\', function(module, exports, require) {\nmodule.exports = function() {\n    \'use strict\';\n    return \'Module 3 browser\';  \n};\n});\n'
+                );
 
-            expect(res).to.eql(
-                'require.register(\'./test/module.js\', function(module, exports, require) {\n' +
-                '//Code\n' +
-                '});\n'
-            );
-        });
-
-        it('Should add a module from node_modules', function() {
-            resolveStub.returns({
-                path: '/srv/supertest/node_modules/test/index.js',
-                name: 'test',
-                dir: '/srv/supertest/node_modules',
-                isModule: true
+                done();
+            }).catch(function(err) {
+                done(err);
             });
-
-            var res = superjoin.addModule('/srv/supertest/index.js', 'test');
-            expect(superjoin.modules).to.eql(['/srv/supertest/node_modules/test/index.js']);
-
-            expect(res).to.eql(
-                'require.register(\'test\', function(module, exports, require) {\n' +
-                '//Code\n' +
-                '});\n'
-            );
-        });
-
-        it('Should add a module from node_modules and all its submodules', function() {
-            resolveStub.withArgs('/srv/supertest/index.js', 'test').returns({
-                name: 'test',
-                path: '/srv/supertest/node_modules/test/index.js',
-                dir: '/srv/supertest/node_modules/test',
-                isModule: true
-            });
-
-            resolveStub.withArgs('/srv/supertest/node_modules/test/index.js', './lib/test.js').returns({
-                name: 'test/lib/test.js',
-                path: '/srv/supertest/node_modules/test/lib/test.js',
-                dir: '/srv/supertest/node_modules/test',
-                isModule: true
-            });
-
-            resolveStub.withArgs('/srv/supertest/node_modules/test/lib/test.js', './test2.js').returns({
-                name: 'test/lib/test2.js',
-                path: '/srv/supertest/node_modules/test/lib/test2.js',
-                dir: '/srv/supertest/node_modules/test',
-                isModule: true
-            });
-
-            var grepSubmodulesStub = sinon.spy(superjoin, 'grepSubmodules');
-            readFileStub.withArgs('/srv/supertest/node_modules/test/index.js').returns('var test1 = require("./lib/test.js");');
-            readFileStub.withArgs('/srv/supertest/node_modules/test/lib/test.js').returns('var test2 = require("./test2.js");');
-            readFileStub.withArgs('/srv/supertest/node_modules/test/lib/test2.js').returns('console.log("Test 2");');
-            
-            var res = superjoin.addModule('/srv/supertest/index.js', 'test');
-
-            expect(grepSubmodulesStub).to.be.calledThrice();
-            expect(grepSubmodulesStub).to.be.calledWith({
-                name: 'test',
-                path: '/srv/supertest/node_modules/test/index.js',
-                dir: '/srv/supertest/node_modules/test',
-                isModule: true
-            }, 'var test1 = require("./lib/test.js");');
-
-            expect(grepSubmodulesStub).to.be.calledWith({
-                name: 'test/lib/test.js',
-                path: '/srv/supertest/node_modules/test/lib/test.js',
-                dir: '/srv/supertest/node_modules/test',
-                isModule: true
-            }, 'var test2 = require("./test2.js");');
-
-            expect(grepSubmodulesStub).to.be.calledWith({
-                name: 'test/lib/test2.js',
-                path: '/srv/supertest/node_modules/test/lib/test2.js',
-                dir: '/srv/supertest/node_modules/test',
-                isModule: true
-            }, 'console.log("Test 2");');
-
-            expect(superjoin.modules).to.eql([
-                '/srv/supertest/node_modules/test/index.js',
-                '/srv/supertest/node_modules/test/lib/test.js',
-                '/srv/supertest/node_modules/test/lib/test2.js'
-            ]);
-
-            expect(res).to.eql(
-                'require.register(\'test\', function(module, exports, require) {\n' +
-                'var test1 = require("./lib/test.js");\n' +
-                '});\n' +
-                'require.register(\'test/lib/test.js\', function(module, exports, require) {\n' +
-                'var test2 = require("./test2.js");\n' +
-                '});\n' +
-                'require.register(\'test/lib/test2.js\', function(module, exports, require) {\n' +
-                'console.log("Test 2");\n' +
-                '});\n'
-            );
-            
-            grepSubmodulesStub.restore();
-        });
-    });
-
-    describe('join', function() {
-        var superjoin;
-
-        beforeEach(function() {
-            process.chdir(path.join(__dirname, './fixtures/'));
-            superjoin = new Superjoin();
-        });
-
-        it('Should build a superjoin bundle', function() {
-            var expected = fs.readFileSync('../fixtures-build/build.js', { encoding: 'utf8' });
-            superjoin.root = 'public';
-            
-            var res = superjoin.join([
-                "module2",
-                "module3"
-            ], './modules/module1/index.js');
-
-            grunt.file.write('tmp/bundle.js', res);
-            expect(res).to.eql(expected);
         });
     });
 });
