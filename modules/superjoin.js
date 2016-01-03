@@ -59,6 +59,16 @@ class Superjoin extends TaskRunner {
             this.skipSubmodules = conf.skipSubmodules || sjConf.skipSubmodules || false;
             this.outfile = conf.outfile || sjConf.outfile || null;
             this.dev = conf.dev || sjConf.dev || null;
+            this.main = conf.main || sjConf.main || null;
+            this.name = conf.name || sjConf.name || null;
+            this.banner = conf.banner || null;
+
+            if (conf.files && conf.files.length > 0) {
+                this.files = conf.files;
+            }
+            else {
+                this.files = sjConf.files;
+            }
 
             if (this.root && this.root.charAt(0) !== '/') {
                 this.root = path.join(this.workingDir, this.root);
@@ -213,9 +223,18 @@ class Superjoin extends TaskRunner {
         return promise;
     }
 
+    /**
+     * Write task
+     *
+     * @method writeTask
+     * @private
+     * 
+     * @return {object} Returns a promise
+     */
     writeTask() {
         var promise = new Promise(function(resolve, reject) {
             if (this.outfile) {
+                log.debug('Write bundle file:', this.outfile);
                 fl.write(this.outfile, this.bundle);
             }
 
@@ -568,11 +587,8 @@ class Superjoin extends TaskRunner {
                     conf = fl.readJSON(file);
                     if (conf) {
                         if (conf.main && !/^\.{0,2}\//.test(conf.main)) {
-                            this.main = './' + conf.main;
+                            conf.main = './' + conf.main;
                         }
-
-                        this.files = conf.files;
-                        this.name = conf.name;
                     }
                 }
 
@@ -652,7 +668,7 @@ class Superjoin extends TaskRunner {
      * 
      * @method build
      * 
-     * @returns {Object} Returns this value
+     * @returns {Object} Returns a promise
      */
     build() {
         return this.run();

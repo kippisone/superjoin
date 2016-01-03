@@ -4,6 +4,25 @@ Superjoin
 Superjoin is a **module loader** for the web. It brings Node.js like **require** support to the **front-end**.
 It uses npm or bower as package storage and gives you the possibility to use your own local packages.
 
+Installation
+------------
+
+Superjoin is available on [NPM](https://npmjs.org) the packagemanager for [Node.js](https://nodejs.org)
+
+The command to install it global:
+
+```shell
+npm install -g superjoin
+```
+
+If you prefer a local installation then remove the `-g` flag from install command.
+
+Requirements
+------------
+
+Node.js >= 4.2.0
+
+
 Usage of Superjoin:
 -------------------
 
@@ -68,3 +87,11 @@ The loading order of npm/bower modules is the following:
 4) Throws a module not found error.
 
 [Read the full documentation](https://superjoinjs.com/docs.html)
+
+
+Superjoin as a plugin
+---------------------
+
+Looking for plugins?
+
+[Superjoin plugin](grunt-task.html) for Grunt.
