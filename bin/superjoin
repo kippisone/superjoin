@@ -28,7 +28,7 @@ var conf = {
     umd: program.umd || false,
     autoload: program.autoload,
     libDir: program.libDir,
-    scriptFile: program.outfile,
+    outfile: program.outfile,
     root: program.root
 };
 

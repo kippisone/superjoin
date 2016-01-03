@@ -43,15 +43,15 @@ class Superjoin extends TaskRunner {
             this.umd = conf.umd || sjConf.umd || false;
             this.umdDependencies = conf.umdDependencies || sjConf.umdDependencies || false;
             this.skipSubmodules = conf.skipSubmodules || sjConf.skipSubmodules || false;
-            this.scriptFile = conf.scriptFile || sjConf.scriptFile || null;
+            this.outfile = conf.outfile || sjConf.outfile || null;
             this.dev = conf.dev || sjConf.dev || null;
 
             if (this.root && this.root.charAt(0) !== '/') {
                 this.root = path.join(this.workingDir, this.root);
             }
 
-            if (this.scriptFile && this.scriptFile.charAt(0) !== '/') {
-                this.scriptFile = path.join(this.root, this.scriptFile);
+            if (this.outfile && this.outfile.charAt(0) !== '/') {
+                this.outfile = path.join(this.root, this.outfile);
             }
 
             this.libDir = conf.libDir || sjConf.libDir || null;
@@ -203,8 +203,8 @@ class Superjoin extends TaskRunner {
 
     writeTask() {
         var promise = new Promise(function(resolve, reject) {
-            if (this.scriptFile) {
-                fl.write(this.scriptFile, this.bundle);
+            if (this.outfile) {
+                fl.write(this.outfile, this.bundle);
             }
 
             resolve();
