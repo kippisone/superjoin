@@ -4,8 +4,10 @@
  * Copyright (c) 2015 Andi Heinkelein andi.oxidant@noname-media.com
  * Licensed under the MIT license.
  */
+
+'use strict';
+
 module.exports = function(grunt) {
-    'use strict';
 
     // Project configuration.
     grunt.initConfig({
@@ -29,15 +31,14 @@ module.exports = function(grunt) {
                 jshintrc: '.jshintrc'
             }
         },
-
         release: {
             options: {
                 npm: true, //default: true
                 indentation: '    ', //default: '  ' (two spaces)
                 tagName: 'v<%= version %>', //default: '<%= version %>'
                 commitMessage: 'Release v<%= version %>', //default: 'release <%= version %>'
-                tagMessage: 'Tagging release v<%= version %>', //default: 'Version <%= version %>',
-                beforeRelease: ['build']
+                tagMessage: 'Tagging release v<%= version %>' //default: 'Version <%= version %>',
+                // beforeRelease: ['build']
             }
         }
 
