@@ -27,7 +27,7 @@ Run the build job
 -----------------
 
 ```shell
-superjoin -o build.js
+$ superjoin -o build.js
 ```
 
 Run this command from the same folder where your superjoin.json file is.
@@ -49,17 +49,17 @@ Inside your code
 //Load local modules
 var myModule = require('./modules/myModule.js');
 
-//Load from node_modules or bower_modules
+//Load from node_modules or bower_components
 var $ = require('jquery');
 ```
 
 The difference of local and npm/bower modules is the leading `./` or `../`.
-If a module name starts with  `./` or `../` it will be loaded relative to the current file.
-All other modules are being loaded as npm/bower modules.
+If a module name starts with  `./` or `../` it will be loaded as a local file.
+All other modules are being processed as npm or bower modules.
 
 The loading order of npm/bower modules is the following:
 
-1) Tries to load it from `bower_modules`. If no bower_module folder is found, tries to load it from a bower_modules folder in the parent directory, until the root directory.
+1) Tries to load it from `bower_components`. If no bower_module folder is found, tries to load it from a bower_components folder in the parent directory, until the root directory.
 
 2) Tries to load it from `node_modules`. If no bower_module folder is found, tries to load it from a node_modules folder in the parent directory, until the root directory.
 
@@ -67,4 +67,4 @@ The loading order of npm/bower modules is the following:
 
 4) Throws a module not found error.
 
-[Read the full documentation](http://superjoinjs.com/docs.html)
+[Read the full documentation](https://superjoinjs.com/docs.html)
