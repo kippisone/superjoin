@@ -1,6 +1,6 @@
 {
   "name": "superjoin",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Brings node.js like module loader support to the web",
   "main": "modules/superjoin.js",
   "dependencies": {
