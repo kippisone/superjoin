@@ -94,4 +94,4 @@ Superjoin as a plugin
 
 Looking for plugins?
 
-[Superjoin plugin](grunt-task.html) for Grunt.
+[Superjoin plugin](grunt-plugin.html) for Grunt.

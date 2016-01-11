@@ -2,8 +2,7 @@
 'use strict';
 
 var program = require('commander'),
-    pkg = require('../package.json'),
-    path = require('path');
+    pkg = require('../package.json');
 
 var watch = require('node-watch');
 var log = require('logtopus');
@@ -45,10 +44,14 @@ if (program.args) {
 
 
 var run = function() {
-    superjoin.map();
-    if (!program.outfile) {
-        process.stdout.write(superjoin.bundle);
-    }
+    superjoin.run().then(function(data) {
+        if (!program.outfile) {
+            process.stdout.write(superjoin.bundle);
+        }
+    }).catch(function(err) {
+        console.error(err);
+        process.exit(1);        
+    });
 };
 
 run();
