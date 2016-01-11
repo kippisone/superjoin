@@ -44,9 +44,14 @@ if (program.args) {
 
 
 var run = function() {
-    if (!program.outfile) {
-        process.stdout.write(superjoin.bundle);
-    }
+    superjoin.run().then(function(data) {
+        if (!program.outfile) {
+            process.stdout.write(superjoin.bundle);
+        }
+    }).catch(function(err) {
+        console.error(err);
+        process.exit(1);        
+    });
 };
 
 run();
