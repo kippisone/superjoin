@@ -11,7 +11,7 @@ var TaskRunner = require('co-tasks');
 var fl = require('node-fl');
 var log = require('logtopus');
 
-log.setLevel('debug');
+log.setLevel('sys');
 
 /**
  * Superjoin class
