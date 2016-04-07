@@ -5,9 +5,9 @@ module.exports = (function() {
     'use strict';
 
     var path = require('path');
-    
+
     var grunt = require('grunt');
-    
+
     var Superjoin = function(conf) {
         conf = conf || {};
 
@@ -144,7 +144,7 @@ module.exports = (function() {
         }
 
         this.headerAdded = true;
-        
+
         // console.log('FILES', files);
 
         files.forEach(function(file) {
@@ -231,7 +231,7 @@ module.exports = (function() {
             if (this.verbose) {
                 grunt.log.ok('Module "%s" already added!', resolved.name);
                 return '';
-            }            
+            }
         }
 
         if (this.verbose) {
@@ -297,7 +297,15 @@ module.exports = (function() {
     };
 
     Superjoin.prototype.readFile = function(file) {
-        return grunt.file.read(file);
+        let source;
+        if (path.ext(file) === '.coffee') {
+            source = this.precompileCoffeeScript(file);
+        }
+        else {
+            source = grunt.file.read(file);
+        }
+
+        return source;
     };
 
     Superjoin.prototype.loadModule = function(moduleType, file) {
@@ -328,10 +336,10 @@ module.exports = (function() {
             filename;
 
         var dir = nodeModule;
-        
+
         if (name.indexOf('/') !== -1) {
             filepath = nodeModule;
-            if (!/\.js(on)?$/.test(name)) {
+            if (!/\.((js(on)?)|(coffee))$/.test(name)) {
                 name += '.js';
                 filepath += '.js';
             }
@@ -341,7 +349,7 @@ module.exports = (function() {
                 require(path.join(nodeModule, '/bower.json')) : null;
             var pkg = grunt.file.exists(path.join(nodeModule, '/package.json')) ?
                 require(path.join(nodeModule, '/package.json')) : null;
-            
+
             if (bwr) {
                 filename = bwr.main;
                 if (Array.isArray(bwr.main)) {
@@ -414,7 +422,7 @@ module.exports = (function() {
                     isModule: true
                 };
             }
-            
+
             if (!resolved && this.npmDir && path.indexOf(this.npmDir) === 0) {
                 resolved = {
                     path: path,
@@ -448,7 +456,7 @@ module.exports = (function() {
             if (!resolved && this.bwrDir) {
                 resolved = this.loadModule('bower', file);
             }
-            
+
             if (!resolved && this.npmDir) {
                 resolved = this.loadModule('npm', file);
             }
@@ -467,7 +475,7 @@ module.exports = (function() {
         else if (/\//.test(to)) { //Contains a slash
             if (/^\.\.?\//.test(to)) {
                 resolved = path.resolve(fromDir, to);
-                if (!/\.[a-z]{2,4}$/.test(resolved)) {
+                if (!/\.[a-z]{2,5}$/.test(resolved)) {
                     resolved += '.js';
                 }
 
@@ -477,7 +485,7 @@ module.exports = (function() {
             else {
                 //Handle module path
                 resolved = to;
-                if (!/\.[a-z]{2,4}$/.test(resolved)) {
+                if (!/\.[a-z]{2,5}$/.test(resolved)) {
                     resolved += '.js';
                 }
 
@@ -492,7 +500,7 @@ module.exports = (function() {
                     isModule: mod.isModule,
                     path: path.join(mod.dir, to)
                 };
-                
+
             }
         }
         else if (/\./.test(to)) { //Contains a dot, but no slash
@@ -514,7 +522,7 @@ module.exports = (function() {
             dir: resolved.dir,
             isModule: resolved.isModule
         });
-        
+
 
         //Do we need an alias?
         if (path.join(resolved.dir, resolved.name) !== resolved.path) {
@@ -547,7 +555,7 @@ module.exports = (function() {
                 if (this.verbose) {
                     grunt.log.ok('Using config file:', file);
                 }
-                
+
                 if (/\/package.json$/.test(file)) {
                     var pkg = grunt.file.readJSON(file);
                     if (pkg && pkg.superjoin) {
@@ -599,6 +607,19 @@ module.exports = (function() {
         deps.deps = deps.deps.join(', ');
 
         return deps;
+    };
+
+    Superjoin.prototype.precompileCoffeeScript = function(file) {
+        console.log('Precompile coffeescript', file);
+        let spawn = require('child_process').spawnSync;
+        let source = '';
+
+        let compile = spawn('coffee', [file]);
+        compile.sdtout.on('data', data => {
+            source += data.toString();
+        });
+
+        return source;
     };
 
     return Superjoin;

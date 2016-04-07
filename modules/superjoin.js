@@ -5,11 +5,12 @@
  */
 'use strict';
 
-var path = require('path');
+let path = require('path');
 
-var TaskRunner = require('co-tasks');
-var fl = require('node-fl');
-var log = require('logtopus');
+let TaskRunner = require('co-tasks');
+let fl = require('node-fl');
+let log = require('logtopus');
+let ModulesList = require('./modulesList');
 
 log.setLevel('sys');
 
@@ -22,6 +23,7 @@ class Superjoin extends TaskRunner {
     constructor(conf) {
         super();
         conf = conf || {};
+        this.initialConf = conf;
 
         if (conf.verbose) {
             log.setLevel('debug');
@@ -32,18 +34,19 @@ class Superjoin extends TaskRunner {
         this.modules = [];
         this.rcalls = [];
 
-        this.defineTasks(['init', 'configure', 'collect', 'build', 'write', 'clean']);
-        this.registerTask('configure', this.configureTask.bind(this, conf));
+        this.defineTasks(['init', 'configure', 'collect', 'precompile', 'build', 'write', 'clean']);
+        this.registerTask('configure', this.configureTask);
         this.registerTask('collect', this.collectTask.bind(this, conf));
         this.registerTask('build', this.buildTask.bind(this));
         this.registerTask('write', this.writeTask.bind(this));
+        this.registerTasksDir(path.join(__dirname, '../tasks/'));
     }
 
-    configureTask(conf) {
+    configureTask() {
         var promise = new Promise(function(resolve, reject) {
-            this.workingDir = conf.workingDir || process.cwd();
+            this.workingDir = this.initialConf.workingDir || process.cwd();
 
-            this.confFiles = conf.confFiles || null;
+            this.confFiles = this.initialConf.confFiles || null;
             if (!this.confFiles) {
                 this.confFiles = [
                     path.join(this.workingDir, 'superjoin.json'),
@@ -53,18 +56,18 @@ class Superjoin extends TaskRunner {
 
             var sjConf = this.readConfFile(this.confFiles);
 
-            this.root = conf.root || sjConf.root || this.workingDir;
-            this.umd = conf.umd || sjConf.umd || false;
-            this.umdDependencies = conf.umdDependencies || sjConf.umdDependencies || false;
-            this.skipSubmodules = conf.skipSubmodules || sjConf.skipSubmodules || false;
-            this.outfile = conf.outfile || sjConf.outfile || null;
-            this.dev = conf.dev || sjConf.dev || null;
-            this.main = conf.main || sjConf.main || null;
-            this.name = conf.name || sjConf.name || null;
-            this.banner = conf.banner || null;
+            this.root = this.initialConf.root || sjConf.root || this.workingDir;
+            this.umd = this.initialConf.umd || sjConf.umd || false;
+            this.umdDependencies = this.initialConf.umdDependencies || sjConf.umdDependencies || false;
+            this.skipSubmodules = this.initialConf.skipSubmodules || sjConf.skipSubmodules || false;
+            this.outfile = this.initialConf.outfile || sjConf.outfile || null;
+            this.dev = this.initialConf.dev || sjConf.dev || null;
+            this.main = this.initialConf.main || sjConf.main || null;
+            this.name = this.initialConf.name || sjConf.name || null;
+            this.banner = this.initialConf.banner || null;
 
-            if (conf.files && conf.files.length > 0) {
-                this.files = conf.files;
+            if (this.initialConf.files && this.initialConf.files.length > 0) {
+                this.files = this.initialConf.files;
             }
             else {
                 this.files = sjConf.files;
@@ -78,12 +81,12 @@ class Superjoin extends TaskRunner {
                 this.outfile = path.join(this.root, this.outfile);
             }
 
-            this.libDir = conf.libDir || sjConf.libDir || null;
+            this.libDir = this.initialConf.libDir || sjConf.libDir || null;
             if (this.libDir && this.libDir.charAt(0) !== '/') {
                 this.libDir = path.join(this.root, this.libDir);
             }
 
-            this.bwrDir = conf.bwrDir || sjConf.bwrDir || null;
+            this.bwrDir = this.initialConf.bwrDir || sjConf.bwrDir || null;
             if (this.bwrDir && this.bwrDir.charAt(0) !== '/') {
                 this.bwrDir = path.join(this.workingDir, this.bwrDir);
             }
@@ -102,7 +105,7 @@ class Superjoin extends TaskRunner {
                 }
             }
 
-            this.npmDir = conf.npmDir || sjConf.npmDir || null;
+            this.npmDir = this.initialConf.npmDir || sjConf.npmDir || null;
             if (this.npmDir && this.npmDir.charAt(0) !== '/') {
                 this.npmDir = path.join(this.workingDir, this.npmDir);
             }
@@ -133,7 +136,7 @@ class Superjoin extends TaskRunner {
 
             resolve();
         }.bind(this));
-        
+
         return promise;
     }
 
@@ -186,7 +189,7 @@ class Superjoin extends TaskRunner {
                 this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPERJOIN_DEPENDENCIES\*\*\//g, deps.deps);
                 this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPERJOIN_MAIN_PATH\*\*\//g, this.main);
                 this.umdSourceFile = this.umdSourceFile.split('/**SUPERJOIN-UMD-MODULES**/');
-                
+
                 bundle += this.umdSourceFile[0];
             }
             else if (!this.noRequire) {
@@ -228,7 +231,7 @@ class Superjoin extends TaskRunner {
      *
      * @method writeTask
      * @private
-     * 
+     *
      * @return {object} Returns a promise
      */
     writeTask() {
@@ -254,7 +257,7 @@ class Superjoin extends TaskRunner {
 
     /**
      * Add a module
-     * 
+     *
      * @param {string} parent Path of parent file
      * @param {string} file   Filename or resolve object of loading module
      */
@@ -284,8 +287,8 @@ class Superjoin extends TaskRunner {
         if (this.modules.indexOf(resolved.path) !== -1) {
             if (this.verbose) {
                 log.debug('Module already added!', resolved.name);
-            }            
-  
+            }
+
             return '';
         }
 
@@ -295,6 +298,7 @@ class Superjoin extends TaskRunner {
         // }
 
         var source = this.loadFile(resolved.path);
+        this.
 
         module += (/\.json$/.test(resolved.path) ? 'module.exports = ' : '');
         module += source;
@@ -324,7 +328,8 @@ class Superjoin extends TaskRunner {
         this.scripts.push({
             path: name,
             source: module,
-            src: resolved.path
+            src: resolved.path,
+            ext: path.extname(resolved.path).substr(1)
         });
     }
 
@@ -334,31 +339,31 @@ class Superjoin extends TaskRunner {
         var fromDir = path.dirname(from);
         var resolved;
 
-        var getPathProperties = function(path) {
-            var resolved;
+        var getPathProperties = function(pathname) {
+            let resolved;
 
-            if (this.libDir && path.indexOf(this.libDir) === 0) {
+            if (this.libDir && pathname.indexOf(this.libDir) === 0) {
                 resolved = {
-                    path: path,
-                    name: path.replace(this.libDir.replace(/\/$/, '') + '/', ''),
+                    path: pathname,
+                    name: pathname.replace(this.libDir.replace(/\/$/, '') + '/', ''),
                     dir: this.libDir,
                     isModule: true
                 };
             }
 
-            if (!resolved && this.bwrDir && path.indexOf(this.bwrDir) === 0) {
+            if (!resolved && this.bwrDir && pathname.indexOf(this.bwrDir) === 0) {
                 resolved = {
-                    path: path,
-                    name: path.replace(this.bwrDir.replace(/\/$/, '') + '/', ''),
+                    path: pathname,
+                    name: pathname.replace(this.bwrDir.replace(/\/$/, '') + '/', ''),
                     dir: this.bwrDir,
                     isModule: true
                 };
             }
-            
-            if (!resolved && this.npmDir && path.indexOf(this.npmDir) === 0) {
+
+            if (!resolved && this.npmDir && pathname.indexOf(this.npmDir) === 0) {
                 resolved = {
-                    path: path,
-                    name: path.replace(this.npmDir.replace(/\/$/, '') + '/', ''),
+                    path: pathname,
+                    name: pathname.replace(this.npmDir.replace(/\/$/, '') + '/', ''),
                     dir: this.npmDir,
                     isModule: true
                 };
@@ -366,8 +371,8 @@ class Superjoin extends TaskRunner {
 
             if (!resolved) {
                 resolved = {
-                    path: path,
-                    name: path.replace(this.root.replace(/\/$/, ''), '.'),
+                    path: pathname,
+                    name: pathname.replace(this.root.replace(/\/$/, ''), '.'),
                     dir: this.root,
                     isModule: false
                 };
@@ -386,7 +391,7 @@ class Superjoin extends TaskRunner {
             if (!resolved && this.bwrDir) {
                 resolved = this.loadModule('bower', file);
             }
-            
+
             if (!resolved && this.npmDir) {
                 resolved = this.loadModule('npm', file);
             }
@@ -412,7 +417,7 @@ class Superjoin extends TaskRunner {
         else if (/\//.test(to)) { //Contains a slash
             if (/^\.\.?\//.test(to)) {
                 resolved = path.resolve(fromDir, to);
-                if (!/\.[a-z]{2,4}$/.test(resolved)) {
+                if (!/\.[a-z]{2,6}$/.test(resolved)) {
                     resolved += '.js';
                 }
 
@@ -421,7 +426,7 @@ class Superjoin extends TaskRunner {
             else {
                 //Handle module path
                 resolved = to;
-                if (!/\.[a-z]{2,4}$/.test(resolved)) {
+                if (!/\.[a-z]{2,6}$/.test(resolved)) {
                     resolved += '.js';
                 }
 
@@ -438,7 +443,7 @@ class Superjoin extends TaskRunner {
                     isModule: mod.isModule,
                     path: path.join(mod.dir, to)
                 };
-                
+
             }
         }
         else if (/\./.test(to)) { //Contains a dot, but no slash
@@ -495,10 +500,10 @@ class Superjoin extends TaskRunner {
             filename;
 
         var dir = nodeModule;
-        
+
         if (name.indexOf('/') !== -1) {
             filepath = nodeModule;
-            if (!/\.js(on)?$/.test(name)) {
+            if (!/\.(js(on)?|coffee)$/.test(name)) {
                 name += '.js';
                 filepath += '.js';
             }
@@ -508,7 +513,7 @@ class Superjoin extends TaskRunner {
                 require(path.join(nodeModule, '/bower.json')) : null;
             var pkg = fl.exists(path.join(nodeModule, '/package.json')) ?
                 require(path.join(nodeModule, '/package.json')) : null;
-            
+
             if (bwr) {
                 filename = bwr.main;
                 if (Array.isArray(bwr.main)) {
@@ -596,7 +601,7 @@ class Superjoin extends TaskRunner {
                     if (conf.main && !/^\.{0,2}\//.test(conf.main)) {
                         conf.main = './' + conf.main;
                     }
-                    
+
                     break;
                 }
 
@@ -665,13 +670,14 @@ class Superjoin extends TaskRunner {
 
     /**
      * Starts the bundler
-     * 
+     *
      * @method build
-     * 
+     *
      * @returns {Object} Returns a promise
      */
     build() {
-        return this.run();
+        this.moduleList = new ModulesList();
+        return this.run(null, this, 5000);
     }
 
     /**

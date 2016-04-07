@@ -44,13 +44,13 @@ if (program.args) {
 
 
 var run = function() {
-    superjoin.run().then(function(data) {
+    superjoin.build().then(function(data) {
         if (!program.outfile) {
             process.stdout.write(superjoin.bundle);
         }
     }).catch(function(err) {
-        console.error(err);
-        process.exit(1);        
+        console.error(err.stack || err);
+        process.exit(1);
     });
 };
 

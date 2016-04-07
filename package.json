@@ -4,18 +4,18 @@
   "description": "Brings node.js like module loader support to the web",
   "main": "modules/superjoin.js",
   "dependencies": {
-    "co-tasks": "^0.1.1",
-    "co-utils": "^0.1.1",
+    "co-tasks": "^0.2.0",
+    "co-utils": "^0.2.0",
     "commander": "^2.9.0",
     "grunt": "^0.4.5",
     "logtopus": "^0.1.1",
     "node-fl": "0.0.2",
-    "source-map": "^0.5.3",
-    "node-watch": "^0.3.4"
+    "node-watch": "^0.3.5",
+    "source-map": "^0.5.3"
   },
   "devDependencies": {
     "coffeebreak-expection": "0.0.0",
-    "grunt-bumpup": "^0.6.2",
+    "grunt-bumpup": "^0.6.3",
     "grunt-contrib-jshint": "^0.11.3",
     "grunt-release": "^0.13.0"
   },
