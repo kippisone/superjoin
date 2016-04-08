@@ -197,7 +197,27 @@ class Superjoin extends TaskRunner {
             }
 
             for (let script of this.scripts) {
-                bundle += script.source;
+                var module = '';
+
+                if (script.alias) {
+                    module += 'require.alias[\'' + script.path + '\'] = \'' + script.alias + '\';\n';
+                }
+
+                if (this.modules.indexOf(script.path) !== -1) {
+                    if (this.verbose) {
+                        log.debug('Module already added!', script.path);
+                    }
+
+                    return '';
+                }
+
+                module += 'require.register(\'' + script.path + '\', function(module, exports, require) {\n';
+
+                module += (/\.json$/.test(script.path) ? 'module.exports = ' : '');
+                module += script.source;
+                module += '\n});\n';
+
+                bundle += module;
             }
 
             if (this.dev) {
@@ -276,33 +296,33 @@ class Superjoin extends TaskRunner {
 
         log.debug(' ... resolved', resolved);
 
-        var module = '';
-
+        // var module = '';
+        //
         var name = resolved.name;
-        if (resolved.alias) {
-            module += 'require.alias[\'' + resolved.name + '\'] = \'' + resolved.alias + '\';\n';
-            name = resolved.alias;
-        }
-
-        if (this.modules.indexOf(resolved.path) !== -1) {
-            if (this.verbose) {
-                log.debug('Module already added!', resolved.name);
-            }
-
-            return '';
-        }
-
-        module += 'require.register(\'' + name + '\', function(module, exports, require) {\n';
-        // if (this.verbose) {
-        //     grunt.log.ok(' ... add module', resolved);
+        // if (resolved.alias) {
+        //     module += 'require.alias[\'' + resolved.name + '\'] = \'' + resolved.alias + '\';\n';
+        //     name = resolved.alias;
         // }
-
+        //
+        // if (this.modules.indexOf(resolved.path) !== -1) {
+        //     if (this.verbose) {
+        //         log.debug('Module already added!', resolved.name);
+        //     }
+        //
+        //     return '';
+        // }
+        //
+        // module += 'require.register(\'' + name + '\', function(module, exports, require) {\n';
+        // // if (this.verbose) {
+        // //     grunt.log.ok(' ... add module', resolved);
+        // // }
+        //
         var source = this.loadFile(resolved.path);
-        this.
-
-        module += (/\.json$/.test(resolved.path) ? 'module.exports = ' : '');
-        module += source;
-        module += '\n});\n';
+        // this.
+        //
+        // module += (/\.json$/.test(resolved.path) ? 'module.exports = ' : '');
+        // module += source;
+        // module += '\n});\n';
 
         // if (this.sourceMaps) {
         //     var chunks = source.split('\n');
@@ -327,9 +347,10 @@ class Superjoin extends TaskRunner {
 
         this.scripts.push({
             path: name,
-            source: module,
+            source: source,
             src: resolved.path,
-            ext: path.extname(resolved.path).substr(1)
+            ext: path.extname(resolved.path).substr(1),
+            alias: resolved.alias
         });
     }
 
@@ -417,7 +438,7 @@ class Superjoin extends TaskRunner {
         else if (/\//.test(to)) { //Contains a slash
             if (/^\.\.?\//.test(to)) {
                 resolved = path.resolve(fromDir, to);
-                if (!/\.[a-z]{2,6}$/.test(resolved)) {
+                if (!/\.(js|json|coffee)$/.test(resolved)) {
                     resolved += '.js';
                 }
 
@@ -426,7 +447,7 @@ class Superjoin extends TaskRunner {
             else {
                 //Handle module path
                 resolved = to;
-                if (!/\.[a-z]{2,6}$/.test(resolved)) {
+                if (!/\.(js|json|coffee)$/.test(resolved)) {
                     resolved += '.js';
                 }
 
