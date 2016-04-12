@@ -27,7 +27,7 @@ var conf = {
     umd: program.umd || false,
     autoload: program.autoload,
     libDir: program.libDir,
-    outfile: program.outfile,
+    outfile: program.outfile || null,
     root: program.root
 };
 
@@ -45,7 +45,7 @@ if (program.args) {
 
 var run = function() {
     superjoin.build().then(function(data) {
-        if (!program.outfile) {
+        if (!superjoin.outfile) {
             process.stdout.write(superjoin.bundle);
         }
     }).catch(function(err) {
