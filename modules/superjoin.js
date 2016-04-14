@@ -32,6 +32,7 @@ class Superjoin extends TaskRunner {
         this.modules = [];
         this.fileCache = {};
         this.scripts = [];
+        this.modules = [];
         this.rcalls = [];
 
         this.defineTasks(['init', 'configure', 'collect', 'precompile', 'build', 'write', 'clean']);
@@ -201,16 +202,14 @@ class Superjoin extends TaskRunner {
 
                 if (script.alias) {
                     module += 'require.alias[\'' + script.path + '\'] = \'' + script.alias + '\';\n';
-                    script.path = script.alias;
                 }
 
-                // TODO: Use new way
                 if (this.modules.indexOf(script.path) !== -1) {
                     if (this.verbose) {
                         log.debug('Module already added!', script.path);
                     }
 
-                    continue;
+                    return '';
                 }
 
                 module += 'require.register(\'' + script.path + '\', function(module, exports, require) {\n';
@@ -341,7 +340,6 @@ class Superjoin extends TaskRunner {
         //     src: module
         // }];
 
-        // TODO use new way
         this.modules.push(resolved.path);
 
         if (!this.skipSubmodules) {
@@ -635,9 +633,9 @@ class Superjoin extends TaskRunner {
         return conf || {};
     }
 
-    grepSubmodules(module, pattern) {
+    grepSubmodules(module) {
         log.debug('Grep submodules from:', module);
-        pattern = pattern || /require\((.+?)\)/g;
+        var pattern = /require\((.+?)\)/g;
 
         var source = this.loadFile(module.path);
 
