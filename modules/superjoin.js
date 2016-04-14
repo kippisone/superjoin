@@ -198,22 +198,24 @@ class Superjoin extends TaskRunner {
 
             for (let script of this.scripts) {
                 var module = '';
+                var pathname = script.path;
 
                 if (script.alias) {
-                    module += 'require.alias[\'' + script.path + '\'] = \'' + script.alias + '\';\n';
+                    module += 'require.alias[\'' + pathname + '\'] = \'' + script.alias + '\';\n';
+                    pathname = script.alias;
                 }
 
-                if (this.modules.indexOf(script.path) !== -1) {
+                if (this.modules.indexOf(pathname) !== -1) {
                     if (this.verbose) {
-                        log.debug('Module already added!', script.path);
+                        log.debug('Module already added!', pathname);
                     }
 
                     return '';
                 }
 
-                module += 'require.register(\'' + script.path + '\', function(module, exports, require) {\n';
+                module += 'require.register(\'' + pathname + '\', function(module, exports, require) {\n';
 
-                module += (/\.json$/.test(script.path) ? 'module.exports = ' : '');
+                module += (/\.json$/.test(pathname) ? 'module.exports = ' : '');
                 module += script.source;
                 module += '\n});\n';
 
