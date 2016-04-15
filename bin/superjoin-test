@@ -1,0 +1,38 @@
+#!/usr/bin/env node
+'use strict';
+
+let program = require('commander');
+let pkg = require('../package.json');
+let fs = require('fs');
+let path = require('path');
+
+var log = require('logtopus');
+log.setLevel('sys');
+
+var Superjoin = require('../modules/superjoin');
+
+program.version(pkg.version)
+  .usage('[options]')
+  .description('Runs a self check')
+  .parse(process.argv);
+
+let Mocha = require('mocha');
+let mocha = new Mocha();
+
+let testDir = path.join(__dirname, '../tests/selfcheck/');
+
+fs.readdirSync(testDir).filter(function(file) {
+  // Only keep the .js files
+  return file.substr(-3) === '.js';
+
+}).forEach(function(file) {
+  mocha.addFile(
+    path.join(testDir, file)
+  );
+});
+
+mocha.run(function(failures) {
+  process.on('exit', function () {
+    process.exit(failures);
+  });
+});

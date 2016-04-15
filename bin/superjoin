@@ -4,14 +4,10 @@
 var program = require('commander'),
     pkg = require('../package.json');
 
-var watch = require('node-watch');
-var log = require('logtopus');
-log.setLevel('sys');
-
-var Superjoin = require('../modules/superjoin');
-
 program.version(pkg.version)
-    .usage('[options] <files ...>')
+    .usage('[command] [options] <files ...>')
+    .command('build', 'Builds a project', { isDefault: true })
+    .command('test', 'Runns a self check')
     .option('-o, --outfile <outfile>', 'Write joined file to <outfile>. If this option is not present write to STDOUT')
     .option('-d, --dev', 'Enables autoloading of scripts using XHR that hadn\'t been added to the bundle file')
     .option('-b, --banner <banner>', 'Adds <banner> at the beginning of the bundle')
@@ -21,59 +17,3 @@ program.version(pkg.version)
     .option('-w, --watch', 'Watch .js files for changes and rebuilds the bundle')
     .option('-v, --verbose', 'Enable console logging')
     .parse(process.argv);
-
-var conf = {
-    verbose: program.verbose,
-    umd: program.umd || false,
-    autoload: program.autoload,
-    libDir: program.libDir,
-    outfile: program.outfile || null,
-    root: program.root
-};
-
-if (program.superjoin) {
-    conf.confFiles = [program.superjoinFile];
-}
-
-
-var superjoin = new Superjoin(conf);
-
-if (program.args) {
-    superjoin.scripts = program.args;
-}
-
-
-var run = function() {
-    superjoin.build().then(function(data) {
-        if (!superjoin.outfile) {
-            process.stdout.write(superjoin.bundle);
-        }
-    }).catch(function(err) {
-        console.error(err.stack || err);
-        process.exit(1);
-    });
-};
-
-run();
-
-if (program.watch) {
-    if (program.watch === true) {
-        program.watch = '**/*.js';
-    }
-
-    var watchOpts = {
-        recusive: true,
-        followSymlinks: true
-    };
-
-    var ignore = new RegExp(program.outfile + '$');
-    watch(superjoin.root, watchOpts, function(file) {
-        superjoin.clearCache();
-        if (ignore.test(file)) {
-            return;
-        }
-
-        log.sys('File changed:', program.outfile, file);
-        run();
-    });
-}

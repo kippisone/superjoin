@@ -32,23 +32,17 @@ class Superjoin extends TaskRunner {
         this.modules = [];
         this.fileCache = {};
         this.scripts = [];
-        this.modules = [];
         this.rcalls = [];
 
         this.defineTasks(['init', 'configure', 'collect', 'precompile', 'build', 'write', 'clean']);
+        this.registerTask('configure', this.configureTask);
         this.registerTask('collect', this.collectTask.bind(this, conf));
         this.registerTask('build', this.buildTask.bind(this));
         this.registerTask('write', this.writeTask.bind(this));
         this.registerTasksDir(path.join(__dirname, '../tasks/'));
-
-        this.configure();
     }
 
-    loadPlugins() {
-
-    }
-
-    configure() {
+    configureTask() {
         var promise = new Promise(function(resolve, reject) {
             this.workingDir = this.initialConf.workingDir || process.cwd();
 
@@ -204,22 +198,33 @@ class Superjoin extends TaskRunner {
 
             for (let script of this.scripts) {
                 var module = '';
+                var pathname = script.path;
 
                 if (script.alias) {
+<<<<<<< HEAD
                     module += 'require.alias[\'' + script.path + '\'] = \'' + script.alias + '\';\n';
+                    script.path = script.alias;
                 }
 
+                // TODO: Use new way
                 if (this.modules.indexOf(script.path) !== -1) {
+=======
+                    module += 'require.alias[\'' + pathname + '\'] = \'' + script.alias + '\';\n';
+                    pathname = script.alias;
+                }
+
+                if (this.modules.indexOf(pathname) !== -1) {
+>>>>>>> a4bdd491b5bfd551782ebf1c89f0b48bda6286f6
                     if (this.verbose) {
-                        log.debug('Module already added!', script.path);
+                        log.debug('Module already added!', pathname);
                     }
 
-                    return '';
+                    continue;
                 }
 
-                module += 'require.register(\'' + script.path + '\', function(module, exports, require) {\n';
+                module += 'require.register(\'' + pathname + '\', function(module, exports, require) {\n';
 
-                module += (/\.json$/.test(script.path) ? 'module.exports = ' : '');
+                module += (/\.json$/.test(pathname) ? 'module.exports = ' : '');
                 module += script.source;
                 module += '\n});\n';
 
@@ -345,6 +350,7 @@ class Superjoin extends TaskRunner {
         //     src: module
         // }];
 
+        // TODO use new way
         this.modules.push(resolved.path);
 
         if (!this.skipSubmodules) {
@@ -638,9 +644,9 @@ class Superjoin extends TaskRunner {
         return conf || {};
     }
 
-    grepSubmodules(module) {
+    grepSubmodules(module, pattern) {
         log.debug('Grep submodules from:', module);
-        var pattern = /require\((.+?)\)/g;
+        pattern = pattern || /require\((.+?)\)/g;
 
         var source = this.loadFile(module.path);
 
