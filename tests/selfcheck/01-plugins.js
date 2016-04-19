@@ -1,7 +1,9 @@
 'use strict';
 
 let Superjoin = require('../../modules/superjoin');
-let superjoin = new Superjoin();
+let superjoin = new Superjoin({
+  verbose: process.env.logLevel === 'debug'
+});
 
 let inspect = require('inspect.js');
 
@@ -15,8 +17,16 @@ describe('Selfcheck', function() {
     inspect.print(superjoin.__plugins);
     superjoin.__plugins.forEach(plugin => {
       it(` ... load ${plugin.name}`, function() {
-        inspect(plugin.obj).isFunction();
+        inspect(plugin.fn).isFunction();
       });
+    });
+  });
+
+  describe ('Tasks', function() {
+    it('Should load core tasks', function() {
+      inspect(superjoin.tasks).isObject();
+      inspect(superjoin.tasks).hasKey('collect');
+      inspect(superjoin.tasks.collect[0]).isGenerator();
     });
   });
 });

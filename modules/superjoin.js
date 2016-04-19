@@ -38,9 +38,6 @@ class Superjoin extends TaskRunner {
         this.plugins = ['coffee', 'eslint', 'babel'];
 
         this.defineTasks(['init', 'configure', 'collect', 'precompile', 'build', 'write', 'clean']);
-        this.registerTask('collect', this.collectTask.bind(this, conf));
-        this.registerTask('build', this.buildTask.bind(this));
-        this.registerTask('write', this.writeTask.bind(this));
         this.registerTasksDir(path.join(__dirname, '../tasks/'));
 
         this.configure();
@@ -193,133 +190,6 @@ class Superjoin extends TaskRunner {
         return promise;
     }
 
-    collectTask(conf) {
-        var promise = new Promise(function(resolve, reject) {
-
-            if (this.root.charAt(0) !== '/') {
-                //Root is relative
-                this.root = path.join(this.workingDir, this.root);
-            }
-
-            log.debug('Root path:', this.root);
-
-            //addModule expects a parent path
-            var rootFile = path.join(this.root, 'index.js');
-
-            log.debug('Collecting files:', this.files);
-            var files = this.files || [];
-            files.forEach(function(file) {
-                this.addModule(rootFile, file);
-            }, this);
-
-            if (this.main) {
-                let main = this.resolve(rootFile, this.main);
-                this.addModule(rootFile, main.name);
-            }
-
-            resolve();
-        }.bind(this));
-
-        return promise;
-    }
-
-    buildTask(args) {
-        var promise = new Promise(function(resolve, reject) {
-            var bundle = '';
-
-            if (this.banner) {
-                bundle += this.banner.trim() + '\n\n';
-            }
-
-            if (this.umd) {
-                let deps = this.getUmdDependencies();
-                log.debug('Create UMD module with name:', this.umd);
-                this.umdSourceFile = this.loadFile(path.join(__dirname, '../public/umd.js'));
-                this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_MODULE_NAME\*\*\//g, this.umd === true ? this.name : this.umd);
-                this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_AMD_DEPS\*\*\//g, deps.amd);
-                this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_CJS_DEPS\*\*\//g, deps.cjs);
-                this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPREJOIN_WIN_DEPS\*\*\//g, deps.win);
-                this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPERJOIN_DEPENDENCIES\*\*\//g, deps.deps);
-                this.umdSourceFile = this.umdSourceFile.replace(/\/\*\*SUPERJOIN_MAIN_PATH\*\*\//g, this.main);
-                this.umdSourceFile = this.umdSourceFile.split('/**SUPERJOIN-UMD-MODULES**/');
-
-                bundle += this.umdSourceFile[0];
-            }
-            else if (!this.noRequire) {
-                bundle += fl.read(path.join(__dirname, '../public/require.js'));
-            }
-
-            for (let script of this.scripts) {
-                var module = '';
-
-                if (script.alias) {
-                    module += 'require.alias[\'' + script.path + '\'] = \'' + script.alias + '\';\n';
-                }
-
-                if (this.modules.indexOf(script.path) !== -1) {
-                    if (this.verbose) {
-                        log.debug('Module already added!', script.path);
-                    }
-
-                    return '';
-                }
-
-                module += 'require.register(\'' + script.path + '\', function(module, exports, require) {\n';
-
-                module += (/\.json$/.test(script.path) ? 'module.exports = ' : '');
-                module += script.source;
-                module += '\n});\n';
-
-                bundle += module;
-            }
-
-            if (this.dev) {
-                bundle += '//Enable autoloading\nwindow.require.autoload = true;\n\n';
-            }
-
-            if (this.rcalls.length) {
-                bundle += this.rcalls.join('\n');
-            }
-
-            if (this.main) {
-                if (this.umd) {
-                    bundle += 'return require(\'' + this.main + '\');';
-                    bundle += this.umdSourceFile[1];
-                }
-                else {
-                    bundle += 'require(\'' + this.main + '\');\n';
-                }
-            }
-
-            this.bundle = bundle;
-
-            resolve();
-        }.bind(this));
-
-        return promise;
-    }
-
-    /**
-     * Write task
-     *
-     * @method writeTask
-     * @private
-     *
-     * @return {object} Returns a promise
-     */
-    writeTask() {
-        var promise = new Promise(function(resolve, reject) {
-            if (this.outfile) {
-                log.debug('Write bundle file:', this.outfile);
-                fl.write(this.outfile, this.bundle);
-            }
-
-            resolve();
-        }.bind(this));
-
-        return promise;
-    }
-
     /**
      * Adds a file to superjoin
      * @param {String|Object} file Filename or a FileObject
@@ -329,7 +199,7 @@ class Superjoin extends TaskRunner {
     }
 
     /**
-     * Add a module
+     * Adds a module if it does not exist yet
      *
      * @param {string} parent Path of parent file
      * @param {string} file   Filename or resolve object of loading module
@@ -349,59 +219,21 @@ class Superjoin extends TaskRunner {
 
         log.debug(' ... resolved', resolved);
 
-        // var module = '';
-        //
         var name = resolved.name;
-        // if (resolved.alias) {
-        //     module += 'require.alias[\'' + resolved.name + '\'] = \'' + resolved.alias + '\';\n';
-        //     name = resolved.alias;
-        // }
-        //
-        // if (this.modules.indexOf(resolved.path) !== -1) {
-        //     if (this.verbose) {
-        //         log.debug('Module already added!', resolved.name);
-        //     }
-        //
-        //     return '';
-        // }
-        //
-        // module += 'require.register(\'' + name + '\', function(module, exports, require) {\n';
-        // // if (this.verbose) {
-        // //     grunt.log.ok(' ... add module', resolved);
-        // // }
-        //
         var source = this.loadFile(resolved.path);
-        // this.
-        //
-        // module += (/\.json$/.test(resolved.path) ? 'module.exports = ' : '');
-        // module += source;
-        // module += '\n});\n';
-
-        // if (this.sourceMaps) {
-        //     var chunks = source.split('\n');
-        //     chunks.forEach(function(line, index) {
-        //         line += '\n';
-        //         this.sourceNode.add(new SourceNode(index + 1, 0, path.basename(resolved.path), line));
-        //     }, this);
-
-        //     this.sourceNode.setSourceContent(path.basename(resolved.path), source || '//no content added yet!');
-        // }
-
-        // var out = [{
-        //     path: name,
-        //     src: module
-        // }];
-
-        this.modules.push(resolved.path);
 
         if (!this.skipSubmodules) {
             this.grepSubmodules(resolved);
         }
 
+        if (this.scripts.some(mod => mod.name === resolved.name)) {
+          return;
+        }
+
         this.scripts.push({
-            path: name,
+            name: name,
             source: source,
-            src: resolved.path,
+            path: resolved.path,
             ext: path.extname(resolved.path).substr(1),
             alias: resolved.alias
         });
@@ -750,8 +582,7 @@ class Superjoin extends TaskRunner {
      * @returns {Object} Returns a promise
      */
     build() {
-        this.moduleList = new ModulesList();
-        return this.run(null, this, 5000);
+        return this.run(this, 5000);
     }
 
     /**

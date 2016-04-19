@@ -6,15 +6,15 @@ let pkg = require('../package.json');
 let fs = require('fs');
 let path = require('path');
 
-var log = require('logtopus');
-log.setLevel('sys');
-
-var Superjoin = require('../modules/superjoin');
-
 program.version(pkg.version)
   .usage('[options]')
   .description('Runs a self check')
+  .option('-v, --verbose', 'Enable console logging')
   .parse(process.argv);
+
+if (program.verbose) {
+  process.env.logLevel = 'debug';
+}
 
 let Mocha = require('mocha');
 let mocha = new Mocha();
