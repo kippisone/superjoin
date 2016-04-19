@@ -34,6 +34,8 @@ class Superjoin extends TaskRunner {
         this.scripts = [];
         this.modules = [];
         this.rcalls = [];
+        this.__plugins = [];
+        this.plugins = ['coffee', 'eslint', 'babel'];
 
         this.defineTasks(['init', 'configure', 'collect', 'precompile', 'build', 'write', 'clean']);
         this.registerTask('collect', this.collectTask.bind(this, conf));
@@ -42,10 +44,50 @@ class Superjoin extends TaskRunner {
         this.registerTasksDir(path.join(__dirname, '../tasks/'));
 
         this.configure();
+
+        if (!conf.skipPlugins) {
+          this.loadPlugins();
+          this.callPlugins();
+        }
     }
 
     loadPlugins() {
+      let pluginDirs = [path.join(__dirname, '../node_modules'), path.join(this.workingDir, './node_modules')];
 
+      log.debug('Load plugins');
+      for (let plugin of this.plugins) {
+        log.debug(' ... loading plugin', plugin);
+
+        try {
+          for (let pluginDir of pluginDirs) {
+            let pluginModule = 'superjoin-' + plugin + '-plugin';
+            if (fl.exists(path.join(pluginDir, pluginModule, 'package.json'))) {
+              let pluginPkg = require(path.join(pluginDir, pluginModule, 'package.json'));
+              this.__plugins.push({
+                name: pluginPkg.name,
+                version: pluginPkg.version,
+                fn: require(path.join(pluginDir, pluginModule))
+              });
+
+              break;
+            }
+          }
+        }
+        catch(err) {
+          log.error(err);
+        }
+      }
+    }
+
+    callPlugins() {
+      for (let plugin of this.__plugins) {
+        try {
+          plugin.fn(this);
+        }
+        catch(err) {
+          plugin.callErr = err;
+        }
+      }
     }
 
     configure() {
@@ -130,6 +172,11 @@ class Superjoin extends TaskRunner {
                 }
             }
 
+            this.plugins = this.plugins.concat(
+              this.initialConf.plugins || []
+            ).filter(
+              (item, index, arr) => arr.indexOf(item) === index
+            );
 
             log.debug('Working dir:', this.workingDir);
             log.debug('Root dir:', this.root);
