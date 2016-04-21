@@ -39,7 +39,7 @@ module.exports = function(superjoin, log) {
         var module = '';
 
         if (script.alias) {
-            module += 'require.alias[\'' + script.name + '\'] = \'' + script.alias + '\';\n';
+            module += 'require.alias[\'' + script.alias + '\'] = \'' + script.name + '\';\n';
         }
 
         if (this.modules.indexOf(script.name) !== -1) {

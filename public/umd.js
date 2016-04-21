@@ -80,7 +80,7 @@
         }
 
         resolved = resolved.join('/');
-        if (!/\.(js(on)?|coffee)$/.test(resolved)) {
+        if (!/\.js(on)?$/.test(resolved)) {
             resolved += '.js';
         }
 

@@ -20,7 +20,7 @@ describe('Integration test', function() {
                     expect(superjoin.bundle).to.be.eql(fl.read(path.join(__dirname, testName, 'expected.js')));
                     done();
                 }).catch(function(err) {
-                    done(err); 
+                    done(err);
                 });
             });
         });

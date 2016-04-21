@@ -26,7 +26,11 @@ describe('Selfcheck', function() {
     it('Should load core tasks', function() {
       inspect(superjoin.tasks).isObject();
       inspect(superjoin.tasks).hasKey('collect');
+      inspect(superjoin.tasks).hasKey('build');
+      inspect(superjoin.tasks).hasKey('write');
       inspect(superjoin.tasks.collect[0]).isGenerator();
+      inspect(superjoin.tasks.build[0]).isGenerator();
+      inspect(superjoin.tasks.write[0]).isGenerator();
     });
   });
 });

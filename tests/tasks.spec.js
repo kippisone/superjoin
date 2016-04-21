@@ -13,7 +13,7 @@ let inspect = require('inspect.js');
 let sinon = require('sinon');
 inspect.useSinon(sinon);
 
-describe.only('Task', function() {
+describe('Task', function() {
   describe('collect', function() {
     it('Should collect files', function() {
       return superjoin.run(['collect'], superjoin)
@@ -21,7 +21,8 @@ describe.only('Task', function() {
         inspect(superjoin.scripts).isArray();
         inspect(superjoin.scripts[0]).isObject();
         inspect(superjoin.scripts[0]).hasProps({
-          name: 'jquery',
+          alias: 'xjquery',
+          name: 'jquery/jquery.js',
           path: path.join(__dirname, '../example/node_modules/jquery/jquery.js'),
           ext: 'js'
         });

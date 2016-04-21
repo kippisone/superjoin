@@ -11,7 +11,7 @@
      * Load a module
      *
      * Loads a local or npm module. If the module name starts with an . a local module will be loaded.
-     * 
+     *
      * @param  {string} module Loads a module
      * @return {any}      Returns the loaded module.
      */
@@ -48,7 +48,7 @@
         var remoteFile = location.protocol
             .concat('//', location.host)
             .concat(file.substr(1));
-        
+
         var xhr = new XMLHttpRequest();
         xhr.open('GET', remoteFile, false);
         xhr.send();

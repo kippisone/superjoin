@@ -14,7 +14,7 @@
 
     var deps = ['firetpl', 'xqcore', 'jquery'],
         args = Array.prototype.slice.call(arguments);
-    
+
     var lastCache;
     var require = function(file) {
 
@@ -35,7 +35,7 @@
 
         lastCache = require.cache;
         if (require.cache[file]) {
-            
+
             if (require.cache[file].obj) {
                 return require.cache[file].obj;
             }
