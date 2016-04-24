@@ -183,10 +183,14 @@ require.register('xqcore/lib/sock.js', function(module, exports, require) {
 var SockJS = {};
 module.exports = SockJS;
 });
+require.register('./libs/supercoffee/index.coffee.js', function(module, exports, require) {
+
+});
 require.alias['xqcore'] = 'xqcore/index.js';
 require.register('xqcore/index.js', function(module, exports, require) {
 var FireTPL = require('firetpl');
 var SockJS = require('./lib/sock.js');
+var Supercoffee = require('./lib/supercoffee/index.coffee.js');
 
 var XQCore = {};
 module.exports = XQCore;

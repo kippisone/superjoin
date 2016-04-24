@@ -34,7 +34,12 @@ class Superjoin extends TaskRunner {
     this.modules = [];
     this.rcalls = [];
     this.__plugins = [];
+    this.__precompilers = {};
     this.plugins = ['coffee', 'eslint', 'babel'];
+
+    this.importPattern = {
+      'js': ['require\(\'(.+?)\'\)', 'require\(\'(.+?)\'\)']
+    };
 
     this.defineTasks(['init', 'configure', 'collect', 'precompile', 'build', 'write', 'clean']);
     this.registerTasksDir(path.join(__dirname, '../tasks/'));
@@ -470,16 +475,24 @@ class Superjoin extends TaskRunner {
 
   /**
    * Load a file content, read from cache if it is cached, otherwise reads file from disk and add file to file cache
-   * @param  {String} filename File path
+   * @param  {String} file File path
    * @return {String}          Returns file content
    */
-  loadFile(filename) {
-    if (!this.fileCache[filename]) {
-      log.debug('Load file into cache:', filename);
-      this.fileCache[filename] = fl.read(filename);
+  loadFile(file) {
+    if (!this.fileCache[file]) {
+      log.debug('Load file into cache:', file);
+      let source = fl.read(file);
+
+      let ext = path.extname(file).substr(1);
+      if (this.__precompilers[ext]) {
+        log.debug('Precomile file with ' + this.__precompilers[ext].name, file);
+        source = this.__precompilers[ext](file, source);
+      }
+
+      this.fileCache[file] = source;
     }
 
-    return this.fileCache[filename];
+    return this.fileCache[file];
   }
 
   addRequireCall(name) {
@@ -520,11 +533,11 @@ class Superjoin extends TaskRunner {
   }
 
   grepSubmodules(module) {
-    console.log('MMM', module);
     log.debug('Grep submodules from:', module);
     var pattern = /require\((.+?)\)/g;
 
     var source = module.source;
+    var ext = module.ext;
 
     while(true) {
       var match = pattern.exec(source);
@@ -539,6 +552,12 @@ class Superjoin extends TaskRunner {
       }
 
       subModule = subModule.slice(1, -1);
+      console.log('SUBMOD', ext, subModule);
+      let reg = new RegExp('\\.' + ext + '$');
+      if (!reg.test(subModule)) {
+        subModule += '.' + ext;
+      }
+
 
       if (this.umd && this.umdDependencies && Object.keys(this.umdDependencies).indexOf(subModule) !== -1) {
         log.debug('Module is an UMD dependency!', subModule);
@@ -595,6 +614,15 @@ class Superjoin extends TaskRunner {
    */
   clearCache() {
     this.fileCache = {};
+  }
+
+  registerPrecompiler(type, fn) {
+    if (this.__precompilers[type]) {
+      log.warn(`Overwrite existing precompiler for ${type}`);
+    }
+
+    log.debug(`Set precompiler for ${type}`, fn.name)
+    this.__precompilers[type] = fn;
   }
 
   //--
