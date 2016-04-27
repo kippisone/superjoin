@@ -18,7 +18,6 @@ describe('Task', function() {
     it('Should collect files', function() {
       return superjoin.run(['collect'], superjoin)
       .then(res => {
-        inspect.print(superjoin.scripts);
         inspect(superjoin.scripts).isArray();
         inspect(superjoin.scripts[0]).isObject();
         inspect(superjoin.scripts[0]).hasProps({
@@ -56,7 +55,6 @@ describe('Task', function() {
     it ('Should run a precompile task', function() {
       return superjoin.run(['precompile'], superjoin)
       .then(res => {
-        inspect.print(superjoin.scripts);
         inspect(superjoin.scripts).isArray();
         inspect(superjoin.scripts[0]).isObject();
         inspect(superjoin.scripts[0]).hasProps({
