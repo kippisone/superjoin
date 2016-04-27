@@ -1,2 +1,2 @@
-lib2 = require './lib2.coffee'
+lib2 = require './lib2'
 module.exports = lib2

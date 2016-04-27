@@ -5,7 +5,7 @@ let fl = require('node-fl');
 
 let Superjoin = require('../modules/superjoin');
 let superjoin = new Superjoin({
-  skipPlugins: true,
+  skipPlugins: false,
   workingDir: path.join(__dirname, '../example')
 });
 
@@ -18,10 +18,11 @@ describe('Task', function() {
     it('Should collect files', function() {
       return superjoin.run(['collect'], superjoin)
       .then(res => {
+        inspect.print(superjoin.scripts);
         inspect(superjoin.scripts).isArray();
         inspect(superjoin.scripts[0]).isObject();
         inspect(superjoin.scripts[0]).hasProps({
-          alias: 'xjquery',
+          alias: 'jquery',
           name: 'jquery/jquery.js',
           path: path.join(__dirname, '../example/node_modules/jquery/jquery.js'),
           ext: 'js'
@@ -36,9 +37,64 @@ describe('Task', function() {
 
         inspect(superjoin.scripts[3]).isObject();
         inspect(superjoin.scripts[3]).hasProps({
+          name: './lib/coffee/lib2.coffee',
+          path: path.join(__dirname, '../example/lib/coffee/lib2.coffee'),
+          ext: 'coffee'
+        });
+
+        inspect(superjoin.scripts[4]).isObject();
+        inspect(superjoin.scripts[4]).hasProps({
           name: './lib/coffee/lib.coffee',
           path: path.join(__dirname, '../example/lib/coffee/lib.coffee'),
           ext: 'coffee'
+        });
+      });
+    });
+  });
+
+  describe('precompile', function() {
+    it ('Should run a precompile task', function() {
+      return superjoin.run(['precompile'], superjoin)
+      .then(res => {
+        inspect.print(superjoin.scripts);
+        inspect(superjoin.scripts).isArray();
+        inspect(superjoin.scripts[0]).isObject();
+        inspect(superjoin.scripts[0]).hasProps({
+          alias: 'jquery',
+          name: 'jquery/jquery.js',
+          path: path.join(__dirname, '../example/node_modules/jquery/jquery.js'),
+          ext: 'js'
+        });
+
+        inspect(superjoin.scripts[1]).isObject();
+        inspect(superjoin.scripts[1]).hasProps({
+          name: './lib/foo/foo.js',
+          path: path.join(__dirname, '../example/lib/foo/foo.js'),
+          ext: 'js'
+        });
+
+        inspect(superjoin.scripts[3]).isObject();
+        inspect(superjoin.scripts[3]).hasProps({
+          name: './lib/coffee/lib2.coffee.js',
+          path: path.join(__dirname, '../example/lib/coffee/lib2.coffee'),
+          ext: 'js',
+          hasPrecompilation: true,
+          orig: {
+            name: './lib/coffee/lib2.coffee',
+            ext: 'coffee'
+          }
+        });
+
+        inspect(superjoin.scripts[4]).isObject();
+        inspect(superjoin.scripts[4]).hasProps({
+          name: './lib/coffee/lib.coffee.js',
+          path: path.join(__dirname, '../example/lib/coffee/lib.coffee'),
+          ext: 'js',
+          hasPrecompilation: true,
+          orig: {
+            name: './lib/coffee/lib.coffee',
+            ext: 'coffee'
+          }
         });
       });
     });
@@ -62,7 +118,8 @@ describe('Task', function() {
       .then(res => {
         inspect(writeStub).wasCalledOnce();
         inspect(writeStub.firstCall.args[1]).doesContainOnce('require.register(\'./lib/foo/foo.js');
-        inspect(writeStub.firstCall.args[1]).doesContainOnce('require.register(\'./lib/coffee/lib.coffee');
+        inspect(writeStub.firstCall.args[1]).doesContainOnce('require.register(\'./lib/coffee/lib.coffee.js');
+        inspect(writeStub.firstCall.args[1]).doesContainOnce('require.register(\'./lib/coffee/lib2.coffee.js');
       });
     });
   });

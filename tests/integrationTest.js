@@ -5,7 +5,7 @@ var fl = require('node-fl');
 
 var Superjoin = require('../modules/superjoin.js');
 
-describe('Integration test', function() {
+describe.skip('Integration test', function() {
     var modules = ['cjs-module', 'cjs-umd'];
 
     modules.forEach(function(testName) {

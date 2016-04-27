@@ -34,11 +34,14 @@ class Superjoin extends TaskRunner {
     this.modules = [];
     this.rcalls = [];
     this.__plugins = [];
-    this.__precompilers = {};
+    // this.__precompilers = {};
     this.plugins = ['coffee', 'eslint', 'babel'];
 
     this.importPattern = {
-      'js': ['require\(\'(.+?)\'\)', 'require\(\'(.+?)\'\)']
+      'js': [
+        /require\s*\(\s*'(.+?)\'\s*\)/,
+        /require\s*\(\s*"(.+?)\"\s*\)/
+      ]
     };
 
     this.defineTasks(['init', 'configure', 'collect', 'precompile', 'build', 'write', 'clean']);
@@ -75,7 +78,7 @@ class Superjoin extends TaskRunner {
      }
     }
     catch(err) {
-     log.error(err);
+     log.error(err.stack || err);
     }
    }
   }
@@ -243,15 +246,18 @@ class Superjoin extends TaskRunner {
     }
 
     this.scripts.push(module);
+
+    return module;
   }
 
   resolve(from, to) {
     log.debug('Resolve: "%s" "%s"', from, to);
 
-    var fromDir = path.dirname(from);
-    var resolved;
+    let fromDir = path.dirname(from);
+    let resolved;
+    let parentExt = path.extname(fromDir).substr(1);
 
-    var getPathProperties = function(pathname) {
+    let getPathProperties = function(pathname) {
       let resolved;
 
       if (this.libDir && pathname.indexOf(this.libDir) === 0) {
@@ -327,9 +333,11 @@ class Superjoin extends TaskRunner {
       resolved = this.loadModule(type, RegExp.$2);
     }
     else if (/\//.test(to)) { //Contains a slash
+      let reg = new RegExp('\\.' + parentExt + '|json$');
+
       if (/^\.\.?\//.test(to)) {
         resolved = path.resolve(fromDir, to);
-        if (!/\.(js|json|coffee)$/.test(resolved)) {
+        if (!reg.test(resolved)) {
           resolved += '.js';
         }
 
@@ -338,7 +346,7 @@ class Superjoin extends TaskRunner {
       else {
         //Handle module path
         resolved = to;
-        if (!/\.(js|json|coffee)$/.test(resolved)) {
+        if (!reg.test(resolved)) {
           resolved += '.js';
         }
 
@@ -416,7 +424,7 @@ class Superjoin extends TaskRunner {
 
     if (name.indexOf('/') !== -1) {
       filepath = nodeModule;
-      if (!/\.(js(on)?|coffee)$/.test(name)) {
+      if (!/\.js(on)$/.test(name)) {
         name += '.js';
         filepath += '.js';
       }
@@ -482,13 +490,6 @@ class Superjoin extends TaskRunner {
     if (!this.fileCache[file]) {
       log.debug('Load file into cache:', file);
       let source = fl.read(file);
-
-      let ext = path.extname(file).substr(1);
-      if (this.__precompilers[ext]) {
-        log.debug('Precomile file with ' + this.__precompilers[ext].name, file);
-        source = this.__precompilers[ext](file, source);
-      }
-
       this.fileCache[file] = source;
     }
 
@@ -525,7 +526,6 @@ class Superjoin extends TaskRunner {
 
           break;
         }
-
       }
     }
 
@@ -534,30 +534,36 @@ class Superjoin extends TaskRunner {
 
   grepSubmodules(module) {
     log.debug('Grep submodules from:', module);
-    var pattern = /require\((.+?)\)/g;
+
+    var ext = module.ext;
+    if (!this.importPattern[ext] || this.importPattern[ext].length === 0) {
+      return;
+    }
+
+    let pattern = this.importPattern[ext].map(item => {
+      return item.source;
+    });
+
+    pattern = new RegExp('(?:' + pattern.join(')|(?:') + ')', 'g');
 
     var source = module.source;
-    var ext = module.ext;
 
     while(true) {
-      var match = pattern.exec(source);
+      let match = pattern.exec(source);
       if (!match) {
         break;
       }
 
-      var subModule = match[1].trim();
-      if (subModule.charAt(0) !== '"' && subModule.charAt(0) !== '\'') {
-        log.warn('Could\'t resolve module name!', match[0]);
-        continue;
-      }
+      match = match.filter(item => {
+        return !!item;
+      });
 
-      subModule = subModule.slice(1, -1);
-      console.log('SUBMOD', ext, subModule);
-      let reg = new RegExp('\\.' + ext + '$');
-      if (!reg.test(subModule)) {
-        subModule += '.' + ext;
+      let subModule = match[1].trim();
+      let subExt = path.extname(subModule).substr(1) || ext;
+      let reg = new RegExp('\\.' + subExt + '$');
+      if (subModule.indexOf('/') !== -1 && !reg.test(subModule)) {
+        subModule += '.' + subExt;
       }
-
 
       if (this.umd && this.umdDependencies && Object.keys(this.umdDependencies).indexOf(subModule) !== -1) {
         log.debug('Module is an UMD dependency!', subModule);
@@ -616,13 +622,17 @@ class Superjoin extends TaskRunner {
     this.fileCache = {};
   }
 
-  registerPrecompiler(type, fn) {
-    if (this.__precompilers[type]) {
-      log.warn(`Overwrite existing precompiler for ${type}`);
+  /**
+   * Registers a import pattern for a filetype. The pattern is used to find submodules
+   * @param  {string} ext     File type (Could be 'js', 'coffee', etc...)
+   * @param  {regexp} pattern Regular expression pattern. First and only match matches filename
+   */
+  registerImportPattern(ext, pattern) {
+    if (!this.importPattern[ext]) {
+      this.importPattern[ext] = [];
     }
 
-    log.debug(`Set precompiler for ${type}`, fn.name)
-    this.__precompilers[type] = fn;
+    this.importPattern[ext].push(pattern);
   }
 
   //--
