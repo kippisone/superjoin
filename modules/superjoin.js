@@ -227,6 +227,10 @@ class Superjoin extends TaskRunner {
     log.debug(' ... resolved', resolved);
 
     var name = resolved.name;
+    if (!fl.exists(resolved.path)) {
+      throw new Error(`Module ${parent} requires ${file}, but it was not found!`);
+    }
+    
     var source = this.loadFile(resolved.path);
 
     if (this.scripts.some(mod => mod.name === resolved.name)) {
@@ -430,6 +434,7 @@ class Superjoin extends TaskRunner {
       }
     }
     else if (fl.exists(nodeModule)) {
+      console.log('MOD', moduleType, file);
       var bwr = fl.exists(path.join(nodeModule, '/bower.json')) ?
         require(path.join(nodeModule, '/bower.json')) : null;
       var pkg = fl.exists(path.join(nodeModule, '/package.json')) ?
