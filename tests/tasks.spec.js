@@ -34,8 +34,8 @@ describe('Task', function() {
           ext: 'js'
         });
 
-        inspect(superjoin.scripts[3]).isObject();
-        inspect(superjoin.scripts[3]).hasProps({
+        inspect(superjoin.scripts[5]).isObject();
+        inspect(superjoin.scripts[5]).hasProps({
           name: './lib/coffee/lib2.coffee',
           path: path.join(__dirname, '../example/lib/coffee/lib2.coffee'),
           ext: 'coffee'
@@ -71,8 +71,8 @@ describe('Task', function() {
           ext: 'js'
         });
 
-        inspect(superjoin.scripts[3]).isObject();
-        inspect(superjoin.scripts[3]).hasProps({
+        inspect(superjoin.scripts[5]).isObject();
+        inspect(superjoin.scripts[5]).hasProps({
           name: './lib/coffee/lib2.coffee.js',
           path: path.join(__dirname, '../example/lib/coffee/lib2.coffee'),
           ext: 'js',

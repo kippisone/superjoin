@@ -86,7 +86,7 @@ class Superjoin extends TaskRunner {
   callPlugins() {
    for (let plugin of this.__plugins) {
     try {
-     plugin.fn(this);
+     plugin.fn(this, log);
     }
     catch(err) {
      plugin.callErr = err;
@@ -190,6 +190,7 @@ class Superjoin extends TaskRunner {
       log.debug('Use libDir:', this.libDir);
       log.debug('Use bwrDir:', this.bwrDir);
       log.debug('Use npmDir:', this.npmDir);
+      log.debug('Outfile:', this.outfile);
 
       resolve();
     }.bind(this));
@@ -224,39 +225,37 @@ class Superjoin extends TaskRunner {
       resolved = this.resolve(parent, file);
     }
 
-    log.debug(' ... resolved', resolved);
+    log.debug(' ... resolved', resolved.name);
 
-    var name = resolved.name;
+    if (this.scripts.some(mod => mod.name === resolved.name)) {
+      log.debug(' ... ignore module, already added');
+      return;
+    }
+
     if (!fl.exists(resolved.path)) {
       throw new Error(`Module ${parent} requires ${file}, but it was not found!`);
     }
-    
+
     var source = this.loadFile(resolved.path);
 
-    if (this.scripts.some(mod => mod.name === resolved.name)) {
-     return;
-    }
-
     var module = {
-      name: name,
+      name: resolved.name,
       source: source,
       path: resolved.path,
       ext: path.extname(resolved.path).substr(1),
       alias: resolved.alias
     };
 
+    this.scripts.push(module);
+
     if (!this.skipSubmodules) {
       this.grepSubmodules(module);
     }
-
-    this.scripts.push(module);
 
     return module;
   }
 
   resolve(from, to) {
-    log.debug('Resolve: "%s" "%s"', from, to);
-
     let fromDir = path.dirname(from);
     let resolved;
     let parentExt = path.extname(fromDir).substr(1);
@@ -319,12 +318,9 @@ class Superjoin extends TaskRunner {
       }
 
       if (!resolved) {
-        log.debug('Resolve as local module:', file, resolved);
+        log.debug('Resolve as local module:', file);
         //Try to resolve as local module
         resolved = this.resolve(from, './' + file);
-        if (resolved) {
-          log.warn('Module ' + file + ' not found as module, but could resolve it as local module. It\'s better to require this module as a local module!');
-        }
       }
 
       return resolved;
@@ -361,7 +357,7 @@ class Superjoin extends TaskRunner {
           throw new Error('Module ' + modPath[0] + ' could not be found!');
         }
 
-        resolved = {
+          resolved = {
           name: to,
           dir: mod.dir,
           isModule: mod.isModule,
@@ -434,7 +430,6 @@ class Superjoin extends TaskRunner {
       }
     }
     else if (fl.exists(nodeModule)) {
-      console.log('MOD', moduleType, file);
       var bwr = fl.exists(path.join(nodeModule, '/bower.json')) ?
         require(path.join(nodeModule, '/bower.json')) : null;
       var pkg = fl.exists(path.join(nodeModule, '/package.json')) ?
@@ -457,12 +452,21 @@ class Superjoin extends TaskRunner {
       else if (pkg && pkg.browser && typeof pkg.browser === 'string') {
         filename = pkg.browser;
         filepath = path.join(nodeModule, filename);
+        if (fl.isDir(filepath)) {
+          filepath = path.join(filepath, 'index.js');
+        }
+
         filename = name + filepath.replace(dir, '');
       }
       else if (pkg && pkg.main) {
         filename = pkg.main;
         filepath = path.join(nodeModule, filename);
+        if (fl.isDir(filepath)) {
+          filepath = path.join(filepath, 'index.js');
+        }
+
         filename = name + filepath.replace(dir, '');
+
       }
       else if (pkg) {
         filename = 'index.js';
@@ -494,6 +498,9 @@ class Superjoin extends TaskRunner {
   loadFile(file) {
     if (!this.fileCache[file]) {
       log.debug('Load file into cache:', file);
+      if (!fl.exists(file)) {
+        throw new Error(`Module ${file} not found!`);
+      }
       let source = fl.read(file);
       this.fileCache[file] = source;
     }
@@ -538,7 +545,7 @@ class Superjoin extends TaskRunner {
   }
 
   grepSubmodules(module) {
-    log.debug('Grep submodules from:', module);
+    log.debug('Grep submodules from:', module.name);
 
     var ext = module.ext;
     if (!this.importPattern[ext] || this.importPattern[ext].length === 0) {
@@ -550,11 +557,11 @@ class Superjoin extends TaskRunner {
     });
 
     pattern = new RegExp('(?:' + pattern.join(')|(?:') + ')', 'g');
-
     var source = module.source;
 
-    while(true) {
-      let match = pattern.exec(source);
+    let match;
+    while(pattern.global) {
+      match = pattern.exec(source);
       if (!match) {
         break;
       }
