@@ -13,7 +13,8 @@
     "mocha": "^2.4.5",
     "node-fl": "0.0.2",
     "node-watch": "^0.3.5",
-    "source-map": "^0.5.3"
+    "source-map": "^0.5.3",
+    "superconf": "^0.1.0"
   },
   "devDependencies": {
     "coffeebreak-expection": "0.0.0",

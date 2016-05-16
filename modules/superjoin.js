@@ -1,5 +1,7 @@
 'use strict';
 
+let superconf = require('superconf');
+
 /**
  * Superjoin module
  *
@@ -106,7 +108,7 @@ class Superjoin extends TaskRunner {
         ];
       }
 
-      var sjConf = this.readConfFile(this.confFiles);
+      let sjConf = superconf('superjoin');
 
       this.root = this.initialConf.root || sjConf.root || this.workingDir;
       this.umd = this.initialConf.umd || sjConf.umd || false;
@@ -145,7 +147,7 @@ class Superjoin extends TaskRunner {
       else {
         let dir = path.join(this.workingDir, 'bower_components');
         while (true) {
-          if (fl.exists(dir)) {
+          if (fl.isDir(dir)) {
             this.bwrDir = dir;
             break;
           }
@@ -164,7 +166,7 @@ class Superjoin extends TaskRunner {
       else {
         let dir = path.join(this.workingDir, 'node_modules');
         while (true) {
-          if (fl.exists(dir)) {
+          if (fl.isDir(dir)) {
             this.npmDir = dir;
             break;
           }
@@ -510,38 +512,6 @@ class Superjoin extends TaskRunner {
 
   addRequireCall(name) {
     return this.rcalls.push('require(\'' + name + '\');\n');
-  }
-
-  readConfFile(confFiles) {
-    var conf;
-    for (let file of confFiles) {
-      if (fl.exists(file)) {
-        if (/\/package.json$/.test(file)) {
-          var pkg = fl.readJSON(file);
-          if (pkg && pkg.superjoin) {
-            conf = pkg.superjoin;
-          }
-        }
-        else {
-          conf = fl.readJSON(file);
-          if (conf) {
-            if (conf.main && !/^\.{0,2}\//.test(conf.main)) {
-              conf.main = './' + conf.main;
-            }
-          }
-        }
-
-        if (conf) {
-          if (conf.main && !/^\.{0,2}\//.test(conf.main)) {
-            conf.main = './' + conf.main;
-          }
-
-          break;
-        }
-      }
-    }
-
-    return conf || {};
   }
 
   grepSubmodules(module) {
