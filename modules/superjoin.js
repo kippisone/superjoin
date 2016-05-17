@@ -37,7 +37,7 @@ class Superjoin extends TaskRunner {
     this.rcalls = [];
     this.__plugins = [];
     // this.__precompilers = {};
-    this.plugins = ['coffee', 'eslint', 'babel'];
+    this.plugins = ['coffee', 'eslint', 'babel', 'firetpl'];
 
     this.importPattern = {
       'js': [
