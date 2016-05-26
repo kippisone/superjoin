@@ -7,7 +7,6 @@
     "co-tasks": "^0.2.0",
     "co-utils": "^0.2.0",
     "commander": "^2.9.0",
-    "grunt": "^0.4.5",
     "inspect.js": "^0.1.0",
     "logtopus": "^0.1.1",
     "mocha": "^2.4.5",

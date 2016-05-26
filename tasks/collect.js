@@ -5,7 +5,6 @@ let path = require('path');
 module.exports = function(superjoin, log) {
   superjoin.registerTask('collect', function *() {
     log.debug('Run core collect task');
-
     if (this.root.charAt(0) !== '/') {
       //Root is relative
       this.root = path.join(this.workingDir, this.root);
@@ -27,5 +26,7 @@ module.exports = function(superjoin, log) {
       let main = this.resolve(rootFile, this.main);
       this.addModule(rootFile, main.name);
     }
+
+    log.debug('Collect finish');
   });
 };
