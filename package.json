@@ -8,19 +8,19 @@
     "co-utils": "^0.2.0",
     "commander": "^2.9.0",
     "inspect.js": "^0.1.0",
-    "logtopus": "^0.1.1",
-    "mocha": "^2.4.5",
+    "logtopus": "^0.2.1",
+    "mocha": "^2.5.3",
     "node-fl": "0.0.2",
     "node-watch": "^0.3.5",
-    "source-map": "^0.5.3",
+    "source-map": "^0.5.6",
     "superconf": "^0.1.0"
   },
   "devDependencies": {
     "coffeebreak-expection": "0.0.0",
     "grunt-bumpup": "^0.6.3",
-    "grunt-contrib-jshint": "^0.11.3",
-    "grunt-release": "^0.13.0",
-    "sinon": "^1.17.3"
+    "grunt-contrib-jshint": "^1.0.0",
+    "grunt-release": "^0.13.1",
+    "sinon": "^1.17.4"
   },
   "keywords": [
     "require",
