@@ -7,7 +7,7 @@
     } else if (typeof module !== 'undefined' && module.exports) {
         module.exports = factory(/**SUPREJOIN_CJS_DEPS**/);
     } else {
-        root.XQCore = factory(/**SUPREJOIN_WIN_DEPS**/);
+        root./**SUPREJOIN_MODULE_NAME**/ = factory(/**SUPREJOIN_WIN_DEPS**/);
     }
 }(this, function () {
     'use strict';

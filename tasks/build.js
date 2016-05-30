@@ -50,7 +50,7 @@ module.exports = function(superjoin, log) {
             return '';
         }
 
-        module += 'require.register(\'' + script.name + '\', function(module, exports, require) {\n';
+        module += 'require.register(\'' + script.name + '\', function(module, exports, require) { ';
 
         module += (/\.json$/.test(script.name) ? 'module.exports = ' : '');
         module += script.source;

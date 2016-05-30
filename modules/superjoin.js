@@ -22,7 +22,9 @@ log.setLevel('sys');
  */
 class Superjoin extends TaskRunner {
   constructor(conf) {
-    super();
+    super({
+      debug: conf.verbose || false
+    });
     conf = conf || {};
     this.initialConf = conf;
 
@@ -117,6 +119,7 @@ class Superjoin extends TaskRunner {
     this.dev = this.initialConf.dev || sjConf.dev || null;
     this.main = this.initialConf.main || sjConf.main || null;
     this.name = this.initialConf.name || sjConf.name || null;
+    this.noRequire = this.initialConf.noRequire || sjConf.noRequire || null;
     this.banner = this.initialConf.banner || null;
 
     if (this.initialConf.files && this.initialConf.files.length > 0) {
@@ -521,6 +524,15 @@ class Superjoin extends TaskRunner {
     }
 
     return this.fileCache[file];
+  }
+
+  /**
+   * Loads a file into the file cache
+   * @param  {String} filename Filename
+   * @param  {String} source   Filesource
+   */
+  loadIntoCache(filename, source) {
+    this.fileCache[filename] = source;
   }
 
   addRequireCall(name) {
