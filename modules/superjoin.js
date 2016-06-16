@@ -115,6 +115,7 @@ class Superjoin extends TaskRunner {
     this.umd = this.initialConf.umd || sjConf.umd || false;
     this.umdDependencies = this.initialConf.umdDependencies || sjConf.umdDependencies || false;
     this.skipSubmodules = this.initialConf.skipSubmodules || sjConf.skipSubmodules || false;
+    this.onSubmodule = this.initialConf.onSubmodule || null;
     this.outfile = this.initialConf.outfile || sjConf.outfile || null;
     this.dev = this.initialConf.dev || sjConf.dev || null;
     this.main = this.initialConf.main || sjConf.main || null;
@@ -581,7 +582,10 @@ class Superjoin extends TaskRunner {
       if (module.path.indexOf('/node_modules') !== -1) {
         subModuleDir = path.dirname(module.path);
       }
-      this.addModule(module.path, subModule, subModuleDir);
+
+      if (this.onSubmodule && this.onSubmodule(module)) {
+        this.addModule(module.path, subModule, subModuleDir);
+      }
     }
   }
 

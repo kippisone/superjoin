@@ -104,4 +104,6 @@
     require.alias = {};
 
 /**SUPERJOIN-UMD-MODULES**/
+
+return require('/**SUPERJOIN_MAIN_PATH**/');
 }));
