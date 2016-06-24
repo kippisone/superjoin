@@ -3,7 +3,7 @@
 let path = require('path');
 
 module.exports = function(superjoin, log) {
-  superjoin.registerTask('collect', function* SuperjoinCollectTask() {
+  superjoin.registerTask('collect', function*() {
     log.debug('Run core collect task');
     if (this.root.charAt(0) !== '/') {
       //Root is relative
@@ -28,5 +28,6 @@ module.exports = function(superjoin, log) {
     }
 
     log.debug('Collect finish');
+    return true;
   });
 };

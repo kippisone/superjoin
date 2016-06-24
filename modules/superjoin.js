@@ -625,7 +625,7 @@ class Superjoin extends TaskRunner {
    * @returns {Object} Returns a promise
    */
   build() {
-    return this.run(null, this, 5000);
+    return this.run(['init', 'configure', 'collect', 'precompile', 'build', 'write', 'clean'], this, 50000);
   }
 
   /**
