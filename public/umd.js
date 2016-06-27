@@ -1,6 +1,5 @@
 (function (root, factory) {
     /*global define:false */
-    'use strict';
 
     if (typeof define === 'function' && define.amd) {
         define('/**SUPREJOIN_MODULE_NAME**/', [/**SUPREJOIN_AMD_DEPS**/], factory);
@@ -10,7 +9,7 @@
         root./**SUPREJOIN_MODULE_NAME**/ = factory(/**SUPREJOIN_WIN_DEPS**/);
     }
 }(this, function () {
-    'use strict';
+    // 'use strict';
 
     var deps = [/**SUPERJOIN_DEPENDENCIES**/],
         args = Array.prototype.slice.call(arguments);
@@ -105,5 +104,4 @@
 
 /**SUPERJOIN-UMD-MODULES**/
 
-return require('/**SUPERJOIN_MAIN_PATH**/');
 }));

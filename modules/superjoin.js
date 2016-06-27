@@ -130,6 +130,13 @@ class Superjoin extends TaskRunner {
       this.files = sjConf.files;
     }
 
+    if (this.initialConf.libs && this.initialConf.libs.length > 0) {
+      this.libs = this.initialConf.libs;
+    }
+    else {
+      this.libs = sjConf.libs;
+    }
+
     if (this.root && this.root.charAt(0) !== '/') {
       this.root = path.join(this.workingDir, this.root);
     }
@@ -202,7 +209,11 @@ class Superjoin extends TaskRunner {
    * Adds a file to superjoin
    * @param {String|Object} file Filename or a FileObject
    */
-  add(file) {
+  add(file, isLib) {
+    if (isLib) {
+      this.libs.push(file);
+    }
+
     this.files.push(file);
   }
 
@@ -213,6 +224,38 @@ class Superjoin extends TaskRunner {
    * @param {string} file   Filename or resolve object of loading module
    */
   addModule(parent, file, parentDir) {
+    let module = this.createModule(parent, file, parentDir);
+    if (!module) {
+      return null;
+    }
+
+    this.scripts.push(module);
+
+    if (!this.skipSubmodules) {
+      this.grepSubmodules(module);
+    }
+
+    return module;
+  }
+
+  /**
+   * Adds a lib if it does not exist yet
+   *
+   * @param {string} parent Path of parent file
+   * @param {string} file   Filename or resolve object of loading module
+   */
+  addLib(parent, file, parentDir) {
+    let module = this.createModule(parent, file, parentDir);
+    if (!module) {
+      return null;
+    }
+
+    this.scripts.push(module);
+
+    return module;
+  }
+
+  createModule(parent, file, parentDir) {
     log.debug('Add script module', parent, file);
     var resolved;
     if (typeof file === 'object') {
@@ -232,7 +275,6 @@ class Superjoin extends TaskRunner {
       return;
     }
 
-    ('EX', resolved.path);
     if (!fl.exists(resolved.path)) {
       throw new Error(`Module ${parent} requires ${file}, but it was not found!`);
     }
@@ -246,12 +288,6 @@ class Superjoin extends TaskRunner {
       ext: path.extname(resolved.path).substr(1),
       alias: resolved.alias
     };
-
-    this.scripts.push(module);
-
-    if (!this.skipSubmodules) {
-      this.grepSubmodules(module);
-    }
 
     return module;
   }
@@ -583,9 +619,12 @@ class Superjoin extends TaskRunner {
         subModuleDir = path.dirname(module.path);
       }
 
-      if (this.onSubmodule && this.onSubmodule(module)) {
-        this.addModule(module.path, subModule, subModuleDir);
+      if (this.onSubmodule && !this.onSubmodule(module)) {
+        continue;
       }
+
+      log.debug('Add submodule', module.path);
+      this.addModule(module.path, subModule, subModuleDir);
     }
   }
 
@@ -625,7 +664,7 @@ class Superjoin extends TaskRunner {
    * @returns {Object} Returns a promise
    */
   build() {
-    return this.run(['init', 'configure', 'collect', 'precompile', 'build', 'write', 'clean'], this, 50000);
+    return this.run(['init', 'configure', 'collect', 'precompile', 'build', 'write', 'clean'], this, null, 50000);
   }
 
   /**

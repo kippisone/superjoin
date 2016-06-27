@@ -17,6 +17,11 @@ module.exports = function(superjoin, log) {
 
     log.debug('Collecting files:', this.files);
 
+    let libs = this.libs || [];
+    libs.forEach(function(lib) {
+      this.addLib(rootFile, lib);
+    }, this);
+
     let files = this.files || [];
     files.forEach(function(file) {
       this.addModule(rootFile, file);
