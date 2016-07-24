@@ -8,7 +8,7 @@
     "co-utils": "^0.3.1",
     "commander": "^2.9.0",
     "inspect.js": "1.0.0",
-    "logtopus": "^0.2.1",
+    "logtopus": "0.3.0",
     "mocha": "^2.5.3",
     "node-fl": "0.0.2",
     "node-watch": "^0.3.5",
