@@ -4,8 +4,9 @@ var path = require('path');
 var fl = require('node-fl');
 
 var Superjoin = require('../modules/superjoin.js');
+var inspect = require('inspect.js');
 
-describe.skip('Integration test', function() {
+describe('Integration test', function() {
     var modules = ['cjs-module', 'cjs-umd'];
 
     modules.forEach(function(testName) {
@@ -17,7 +18,7 @@ describe.skip('Integration test', function() {
                 });
 
                 superjoin.build().then(function(data) {
-                    expect(superjoin.bundle).to.be.eql(fl.read(path.join(__dirname, testName, 'expected.js')));
+                    inspect(superjoin.bundle).isEql(fl.read(path.join(__dirname, testName, 'expected.js')));
                     done();
                 }).catch(function(err) {
                     done(err);
