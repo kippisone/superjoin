@@ -3,6 +3,9 @@
   "version": "0.3.2",
   "description": "Brings node.js like module loader support to the web",
   "main": "modules/superjoin.js",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha tests/*.spec.js"
+  },
   "dependencies": {
     "co-tasks": "^0.4.0",
     "co-utils": "^0.3.1",
