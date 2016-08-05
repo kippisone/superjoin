@@ -22,10 +22,12 @@ log.setLevel('sys');
  */
 class Superjoin extends TaskRunner {
   constructor(conf) {
+    conf = conf || {};
+
     super({
       debug: conf.verbose || false
     });
-    conf = conf || {};
+
     this.initialConf = conf;
 
     if (conf.verbose) {
@@ -109,7 +111,9 @@ class Superjoin extends TaskRunner {
       ];
     }
 
-    let sjConf = superconf('superjoin') || {};
+    let sjConf = superconf('superjoin', {
+      cwd: this.workingDir
+    }) || {};
 
     this.root = this.initialConf.root || sjConf.root || this.workingDir;
     this.umd = this.initialConf.umd || sjConf.umd || false;

@@ -4,17 +4,17 @@
   "description": "Brings node.js like module loader support to the web",
   "main": "modules/superjoin.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha tests/*.spec.js"
+    "test": "mocha --reporter lagoon-reporter tests/*.spec.js"
   },
   "dependencies": {
     "co-tasks": "^0.4.0",
     "co-utils": "^0.3.1",
     "commander": "^2.9.0",
-    "inspect.js": "1.0.0",
+    "inspect.js": "^1.2.0",
     "logtopus": "0.3.0",
-    "mocha": "^2.5.3",
+    "mocha": "^3.0.1",
     "node-fl": "0.0.2",
-    "node-watch": "^0.3.5",
+    "node-watch": "^0.4.0",
     "source-map": "^0.5.6",
     "superconf": "0.2.0"
   },
@@ -24,17 +24,29 @@
     "grunt-bumpup": "^0.6.3",
     "grunt-contrib-jshint": "^1.0.0",
     "grunt-release": "^0.14.0",
-    "sinon": "^1.17.4"
+    "lagoon-reporter": "^0.3.2",
+    "sinon": "^1.17.5"
   },
   "keywords": [
     "require",
     "module",
     "moduleloader"
   ],
-  "author": "Andi Heinkelein <andi.oxidant@noname-media.com>",
+  "author": "Andi Heinkelein <andifeind@noname-media.com>",
   "homepage": "https://superjoinjs.com",
   "license": "MIT",
   "bin": {
     "superjoin": "./bin/superjoin"
+  },
+  "directories": {
+    "example": "example",
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Andifeind/superjoin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Andifeind/superjoin/issues"
   }
 }
