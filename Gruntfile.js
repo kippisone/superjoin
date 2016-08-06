@@ -9,49 +9,49 @@
 
 module.exports = function(grunt) {
 
-    // Project configuration.
-    grunt.initConfig({
-        jshint: {
-            all: [
-                'Gruntfile.js',
-                'modules/*.js',
-                'superjoin.js'
-            ],
-            requirejs: {
-                options: {
-                    strict: false
-                },
-                files: {
-                    src: [
-                        'require.js'
-                    ]
-                }
-            },
-            options: {
-                jshintrc: '.jshintrc'
-            }
+  // Project configuration.
+  grunt.initConfig({
+    jshint: {
+      all: [
+        'Gruntfile.js',
+        'modules/*.js',
+        'superjoin.js'
+      ],
+      requirejs: {
+        options: {
+          strict: false
         },
-        release: {
-            options: {
-                npm: true, //default: true
-                indentation: '    ', //default: '  ' (two spaces)
-                tagName: 'v<%= version %>', //default: '<%= version %>'
-                commitMessage: 'Release v<%= version %>', //default: 'release <%= version %>'
-                tagMessage: 'Tagging release v<%= version %>' //default: 'Version <%= version %>',
-                // beforeRelease: ['build']
-            }
+        files: {
+          src: [
+            'require.js'
+          ]
         }
+      },
+      options: {
+        jshintrc: '.jshintrc'
+      }
+    },
+    release: {
+      options: {
+        npm: true, //default: true
+        indentation: '    ', //default: '  ' (two spaces)
+        tagName: 'v<%= version %>', //default: '<%= version %>'
+        commitMessage: 'Release v<%= version %>', //default: 'release <%= version %>'
+        tagMessage: 'Tagging release v<%= version %>' //default: 'Version <%= version %>',
+        // beforeRelease: ['build']
+      }
+    }
 
-    });
+  });
 
-    // Actually load this plugin's task(s).
-    grunt.loadTasks('tasks');
+  // Actually load this plugin's task(s).
+  grunt.loadTasks('tasks');
 
-    // These plugins provide necessary tasks.
-    grunt.loadNpmTasks('grunt-contrib-jshint');
-    grunt.loadNpmTasks('grunt-bumpup');
-    grunt.loadNpmTasks('grunt-release');
+  // These plugins provide necessary tasks.
+  grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-bumpup');
+  grunt.loadNpmTasks('grunt-release');
 
-    // By default, lint and run all tests.
-    grunt.registerTask('default', ['jshint']);
+  // By default, lint and run all tests.
+  grunt.registerTask('default', ['jshint']);
 };

@@ -10,7 +10,7 @@
     "co-tasks": "^0.4.0",
     "co-utils": "^0.3.1",
     "commander": "^2.9.0",
-    "inspect.js": "^1.2.0",
+    "inspect.js": "1.2.1",
     "logtopus": "0.3.0",
     "mocha": "^3.0.1",
     "node-fl": "0.0.2",
@@ -24,7 +24,7 @@
     "grunt-bumpup": "^0.6.3",
     "grunt-contrib-jshint": "^1.0.0",
     "grunt-release": "^0.14.0",
-    "lagoon-reporter": "^0.3.2",
+    "lagoon-reporter": "0.3.3",
     "sinon": "^1.17.5"
   },
   "keywords": [

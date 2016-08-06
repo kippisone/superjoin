@@ -105,6 +105,35 @@ describe('Task', function() {
         inspect(superjoin.bundle).isString();
       });
     });
+
+    it('Build contains jquery module', function() {
+      inspect(superjoin.bundle).doesContain([
+        'require.alias[\'jquery\'] = \'jquery/jquery.js\';',
+        'require.register(\'jquery/jquery.js\', function(module, exports, require) { module.exports = {',
+        '  name: \'jquery\',',
+        '  version: \'2.0.4\'',
+        '};',
+        '',
+        '});'
+      ].join('\n'));
+    });
+
+    it('Build contains main module', function() {
+      inspect(superjoin.bundle).doesContain([
+        'require.register(\'./index.js\', function(module, exports, require) { var foo = require(\'./lib/foo/foo\'),',
+        '    bar = require(\'./lib/bar/bar\'),',
+        '    coffee = require(\'./lib/coffee/lib.coffee\');',
+        '',
+        'console.log(foo());',
+        'console.log(bar());',
+        '',
+        '});'
+      ].join('\n'));
+    });
+
+    it('Build contains main loader', function() {
+      inspect(superjoin.bundle).doesContain('require(\'index.js\');');
+    });
   });
 
   describe('write', function() {

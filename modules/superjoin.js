@@ -3,10 +3,10 @@
 let superconf = require('superconf');
 
 /**
- * Superjoin module
- *
- * @module Superjoin
- */
+  * Superjoin module
+  *
+  * @module Superjoin
+  */
 let path = require('path');
 
 let TaskRunner = require('co-tasks');
@@ -16,10 +16,10 @@ let log = require('logtopus').getLogger('superjoin');
 log.setLevel('sys');
 
 /**
- * Superjoin class
- *
- * @constructor
- */
+  * Superjoin class
+  *
+  * @constructor
+  */
 class Superjoin extends TaskRunner {
   constructor(conf) {
     conf = conf || {};
@@ -56,48 +56,48 @@ class Superjoin extends TaskRunner {
     this.configure();
 
     if (!conf.skipPlugins) {
-     this.loadPlugins();
-     this.callPlugins();
+      this.loadPlugins();
+      this.callPlugins();
     }
   }
 
   loadPlugins() {
-   let pluginDirs = [path.join(__dirname, '../node_modules'), path.join(this.workingDir, './node_modules')];
+    let pluginDirs = [path.join(__dirname, '../node_modules'), path.join(this.workingDir, './node_modules')];
 
-   log.debug('Load plugins');
-   for (let plugin of this.plugins) {
-    log.debug(' ... loading plugin', plugin);
+    log.debug('Load plugins');
+    for (let plugin of this.plugins) {
+      log.debug(' ... loading plugin', plugin);
 
-    try {
-     for (let pluginDir of pluginDirs) {
-      let pluginModule = 'superjoin-' + plugin + '-plugin';
-      if (fl.exists(path.join(pluginDir, pluginModule, 'package.json'))) {
-       let pluginPkg = require(path.join(pluginDir, pluginModule, 'package.json'));
-       this.__plugins.push({
-        name: pluginPkg.name,
-        version: pluginPkg.version,
-        fn: require(path.join(pluginDir, pluginModule))
-       });
+      try {
+        for (let pluginDir of pluginDirs) {
+          let pluginModule = 'superjoin-' + plugin + '-plugin';
+          if (fl.exists(path.join(pluginDir, pluginModule, 'package.json'))) {
+            let pluginPkg = require(path.join(pluginDir, pluginModule, 'package.json'));
+            this.__plugins.push({
+              name: pluginPkg.name,
+              version: pluginPkg.version,
+              fn: require(path.join(pluginDir, pluginModule))
+            });
 
-       break;
+            break;
+          }
+        }
       }
-     }
+      catch(err) {
+        log.error(err.stack || err);
+      }
     }
-    catch(err) {
-     log.error(err.stack || err);
-    }
-   }
   }
 
   callPlugins() {
-   for (let plugin of this.__plugins) {
-    try {
-     plugin.fn(this, log);
+    for (let plugin of this.__plugins) {
+      try {
+        plugin.fn(this, log);
+      }
+      catch(err) {
+        plugin.callErr = err;
+      }
     }
-    catch(err) {
-     plugin.callErr = err;
-    }
-   }
   }
 
   configure() {
@@ -163,14 +163,14 @@ class Superjoin extends TaskRunner {
       while (true) {
         if (fl.isDir(dir)) {
           this.bwrDir = dir;
-          break;
-        }
+            break;
+          }
 
-        dir = path.join(dir, '../../bower_components');
-        if (dir === '/bower_components') {
-          break;
+          dir = path.join(dir, '../../bower_components');
+          if (dir === '/bower_components') {
+              break;
+          }
         }
-      }
     }
 
     this.npmDir = this.initialConf.npmDir || sjConf.npmDir || null;
@@ -182,7 +182,7 @@ class Superjoin extends TaskRunner {
       while (true) {
         if (fl.isDir(dir)) {
           this.npmDir = dir;
-          break;
+            break;
         }
 
         dir = path.join(dir, '../../node_modules');
@@ -193,9 +193,9 @@ class Superjoin extends TaskRunner {
     }
 
     this.plugins = this.plugins.concat(
-     this.initialConf.plugins || []
+      this.initialConf.plugins || []
     ).filter(
-     (item, index, arr) => arr.indexOf(item) === index
+      (item, index, arr) => arr.indexOf(item) === index
     );
 
     log.debug('Working dir:', this.workingDir);
@@ -210,9 +210,9 @@ class Superjoin extends TaskRunner {
   }
 
   /**
-   * Adds a file to superjoin
-   * @param {String|Object} file Filename or a FileObject
-   */
+    * Adds a file to superjoin
+    * @param {String|Object} file Filename or a FileObject
+    */
   add(file, isLib) {
     if (isLib) {
       this.libs.push(file);
