@@ -24,7 +24,8 @@
     "grunt-contrib-jshint": "^1.0.0",
     "grunt-release": "^0.14.0",
     "lagoon-reporter": "0.3.3",
-    "sinon": "^1.17.5"
+    "sinon": "^1.17.5",
+    "superjoin-coffee-plugin": "0.1.0"
   },
   "keywords": [
     "require",
