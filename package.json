@@ -35,7 +35,8 @@
   "homepage": "https://superjoinjs.com",
   "license": "MIT",
   "bin": {
-    "superjoin": "./bin/superjoin"
+    "superjoin": "./bin/superjoin",
+    "superjoin-build": "./bin/superjoin-build"
   },
   "directories": {
     "example": "example",

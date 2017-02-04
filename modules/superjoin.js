@@ -623,6 +623,13 @@ class Superjoin extends TaskRunner {
         subModuleDir = path.dirname(module.path);
       }
 
+      let subModuleRoot = subModule.replace(/\/.*$/, '');
+      let moduleRoot = module.name.replace(/\/.*$/, '');
+      if (/^[a-zA-Z0-9]/.test(subModule) && subModuleDir && moduleRoot !== subModuleRoot) {
+        let moduleName = module.name.split('/').slice(1, -1).join('/');
+        subModuleDir = subModuleDir.replace(new RegExp('\\/' + moduleName + '$'), '');
+      }
+
       if (this.onSubmodule && !this.onSubmodule(module)) {
         continue;
       }
