@@ -39,7 +39,15 @@ class Superjoin extends TaskRunner {
     this.scripts = [];
     this.modules = [];
     this.rcalls = [];
-    this.__plugins = [];
+    this.__plugins = conf.plugins ? conf.plugins.map((plugin) => {
+      const pluginPkg = require(path.join(plugin, 'package.json'));
+
+      return {
+        name: pluginPkg.name,
+        version: pluginPkg.version,
+        fn: require(plugin)
+      };
+    }) : [];
     // this.__precompilers = {};
     this.plugins = ['coffee', 'eslint', 'babel', 'firetpl'];
 
@@ -67,6 +75,7 @@ class Superjoin extends TaskRunner {
     log.debug('Load plugins');
     for (let plugin of this.plugins) {
       log.debug(' ... loading plugin', plugin);
+      let isLoaded = false;
 
       try {
         for (let pluginDir of pluginDirs) {
@@ -79,8 +88,14 @@ class Superjoin extends TaskRunner {
               fn: require(path.join(pluginDir, pluginModule))
             });
 
+            isLoaded = true;
+
             break;
           }
+        }
+        
+        if (!isLoaded) {
+          log.debug(' ... not installed!');
         }
       }
       catch(err) {
