@@ -9,21 +9,22 @@
   "dependencies": {
     "co-tasks": "^0.4.0",
     "co-utils": "^0.3.1",
-    "commander": "^2.9.0",
-    "logtopus": "0.3.0",
+    "commander": "^2.17.1",
+    "logtopus": "^1.0.2",
     "node-fl": "0.0.3",
-    "node-watch": "^0.4.0",
-    "source-map": "^0.5.6",
-    "superconf": "0.2.0"
+    "node-watch": "^0.5.8",
+    "source-map": "^0.7.3",
+    "superconf": "^1.2.0"
   },
   "devDependencies": {
-    "inspect.js": "1.2.1",
-    "grunt": "^1.0.1",
+    "grunt": "^1.0.3",
     "grunt-bumpup": "^0.6.3",
     "grunt-contrib-jshint": "^1.0.0",
     "grunt-release": "^0.14.0",
-    "lagoon-reporter": "^0.3.3",
-    "sinon": "^1.17.5",
+    "inspect.js": "^1.11.7",
+    "lagoon-reporter": "^0.4.0",
+    "mocha": "^5.2.0",
+    "sinon": "^6.1.5",
     "superjoin-coffee-plugin": "^0.0.1"
   },
   "keywords": [
